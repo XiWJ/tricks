@@ -7,3 +7,9 @@
 [理论部分2世界坐标](https://blog.csdn.net/chentravelling/article/details/53558096)
 ### 结果
 结果保存在.pcd文件中，在bash下运行pcl_viewer \*.pcd文件
+### error
+```
+import pcl.pcl_visualization
+ImportError: No module named pcl_visualization
+```
+[应对办法](https://github.com/strawlab/python-pcl/issues/127#issuecomment-379522531)
