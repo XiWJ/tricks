@@ -10,7 +10,6 @@
 <<<<<<< HEAD
 ### new 代码和结果
 见pointCloudv2.py，采用相机外参和内参，直接转成世界坐标，结果保存成 \*.ply，用meshLab打开。
-=======
 ### error
 ```
 import pcl.pcl_visualization
