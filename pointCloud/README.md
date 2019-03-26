@@ -7,3 +7,5 @@
 [理论部分2世界坐标](https://blog.csdn.net/chentravelling/article/details/53558096)
 ### 结果
 结果保存在.pcd文件中，在bash下运行pcl_viewer \*.pcd文件
+### new 代码和结果
+见pointCloudv2.py，采用相机外参和内参，直接转成世界坐标，结果保存成 \*.ply，用meshLab打开。
