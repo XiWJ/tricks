@@ -16,4 +16,3 @@ import pcl.pcl_visualization
 ImportError: No module named pcl_visualization
 ```
 [应对办法](https://github.com/strawlab/python-pcl/issues/127#issuecomment-379522531)
->>>>>>> 2d24a0b812753d90cce012d22419edf4aee5f73e
