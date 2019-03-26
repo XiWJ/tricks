@@ -7,5 +7,14 @@
 [理论部分2世界坐标](https://blog.csdn.net/chentravelling/article/details/53558096)
 ### 结果
 结果保存在.pcd文件中，在bash下运行pcl_viewer \*.pcd文件
+<<<<<<< HEAD
 ### new 代码和结果
 见pointCloudv2.py，采用相机外参和内参，直接转成世界坐标，结果保存成 \*.ply，用meshLab打开。
+=======
+### error
+```
+import pcl.pcl_visualization
+ImportError: No module named pcl_visualization
+```
+[应对办法](https://github.com/strawlab/python-pcl/issues/127#issuecomment-379522531)
+>>>>>>> 2d24a0b812753d90cce012d22419edf4aee5f73e
