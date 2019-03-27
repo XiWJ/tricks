@@ -78,3 +78,18 @@ sudo pip3 install --upgrade pip
 pip3 install pip -U
 pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 ```
+# OpenCV
+首先在[OpenCV下载网站](https://opencv.org/releases.html)，下载OpenCV.zip，解压。
+```
+cd ~/opencv
+mkdir build
+cd build
+```
+如果下载ippicv_2017u2_lnx_intel64_20170418.tgz太慢，可以从网盘下载，放在本地路径下。具体参考[手动安装OpenCV下的IPP加速库](https://www.cnblogs.com/yongy1030/p/10293178.html).
+## error
+```
+error: ‘nullptr’ was not declared in this scope
+Makefile:160: recipe for target 'all' failed
+make: *** [all] Error 2
+```
+这个问题是C++11被禁了，开启之后从新cmake.具体参考[opencv3.4.2 ubuntu16.04安装 error: ‘nullptr’ was not dec](https://www.cnblogs.com/blueridge/p/9510177.html)
