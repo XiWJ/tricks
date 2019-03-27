@@ -88,6 +88,8 @@ cd build
 如果下载ippicv_2017u2_lnx_intel64_20170418.tgz太慢，可以从网盘下载，放在本地路径下。具体参考[手动安装OpenCV下的IPP加速库](https://www.cnblogs.com/yongy1030/p/10293178.html).
 ```
 cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local ..
+make -j7
+sudo make install
 ```
 测试是否安装成功
 ```
