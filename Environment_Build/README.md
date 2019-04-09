@@ -10,6 +10,8 @@ Be careful of **disk partition**<br>
 Access [Nvidia Driver](https://www.geforce.cn/drivers) to get driver<br>
 Follow [Driver Tutorial](https://blog.csdn.net/fu6543210/article/details/79746624) to install nvidia driver on ubuntu.Or follow this [Driver Tutorial2](https://github.com/joseph-zhang/QuickSolver/blob/0bf1c63bdfceffc6330b372af15925183423e6bf/setting/set-env.sh#L37)<br>
 ```bash
+sudo apt-get update
+sudo apt-get upgrade
 sudo add-apt-repository ppa:graphics-drivers/ppa
 sudo apt-get update
 sudo apt-get install nvidia-* nvidia-settings
