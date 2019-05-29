@@ -15,3 +15,5 @@ import pcl.pcl_visualization
 ImportError: No module named pcl_visualization
 ```
 [应对办法](https://github.com/strawlab/python-pcl/issues/127#issuecomment-379522531)
+### 矩阵操作生成点云
+[frame_to_world.py](https://github.com/XiWJ/tricks/blob/master/pointCloud/frame_to_world.py)和study.py功能一样，从图像像素坐标生成点云，但是采用矩阵操作，弃用for循环，效率高500倍，适合大尺度图像
