@@ -1,77 +1,103 @@
+import scipy.misc as misc
+import pcl
 import torch
+import os
+import numpy as np
+import argparse
 
-def projection(feature_1, extrinsic_0, extrinsic_1, depth_0, intrinsic, device='cuda'):
+def adjust_intrinsic(intrinsic, intrinsic_image_dim, image_dim):
     """
-    project source fearure to reference feature
-    :param feature_1: source feature
-    :param extrinsic_0: reference feature extrinsic
-    :param extrinsic_1: source feature extrinsic
-    :param depth_0: reference image depth
-    :param intrinsic: intrinsic, reference = source
-    :return: projection feature
+    adjust intrinsic in need size
+    :param intrinsic: original intrinsic
+    :param intrinsic_image_dim: original image size
+    :param image_dim: need to resize the image size
+    :return: modify intrinsic
     """
-    extrinsic_0_inv = torch.inverse(extrinsic_0)
-    intrinsic_inv = torch.inverse(intrinsic)
-    batch_size, channel, height, width = feature_1.shape
-    # row and colume of source/reference feature, row -> i col -> j
-    row = torch.arange(height).to(device).view(height, 1).repeat(batch_size, 1, width).view(batch_size, -1).float()
-    col = torch.arange(width).to(device).view(1, width).repeat(batch_size, 1, height).view(batch_size, -1).float()
-    # reshape depth to [N, height * width]
-    depth_0 = depth_0.view(batch_size, -1)
-    # pixel frame coordinate [N, 4, height * width], 4 is [j * depth, i * depth, depth, 1]
-    pixel_frame_0 = torch.zeros((batch_size, 4, depth_0.shape[1])).to(device)
-    pixel_frame_0[:, 0, :] = depth_0 * col
-    pixel_frame_0[:, 1, :] = depth_0 * row
-    pixel_frame_0[:, 2, :] = depth_0
-    pixel_frame_0[:, 3, :] = 1
-    # reference camera coordinate [Xc, Yc, Zc, 1]
-    camera_coor_0 = torch.matmul(intrinsic_inv, pixel_frame_0)
+    if intrinsic_image_dim == image_dim:
+        return intrinsic
+    resize_width = np.int(np.floor(image_dim[1] * np.float32(intrinsic_image_dim[0]) / np.float32(intrinsic_image_dim[1])))
+    intrinsic[0,0] *= np.float32(resize_width) / np.float32(intrinsic_image_dim[0])
+    intrinsic[1,1] *= np.float32(image_dim[1]) / np.float32(intrinsic_image_dim[1])
+    # account for cropping here
+    intrinsic[0,2] *= np.float32(image_dim[0]-1) / np.float32(intrinsic_image_dim[0]-1)
+    intrinsic[1,2] *= np.float32(image_dim[1]-1) / np.float32(intrinsic_image_dim[1]-1)
+    return intrinsic
+
+def frame_to_world(opt):
+    """
+    project pixel frame to world using matrix operation, for pointCloud generation
+    input depth, color, intrinsic, camera pose
+    :param opt: opt has depth color intrinsic camera pose path
+    :return: pointCloud save in .ply
+    """
+    # input depth, color
+    depth = misc.imread(os.path.join(opt.depth_path, opt.frame + '.png'))
+    height, width = depth.shape
+    color = misc.imread(os.path.join(opt.color_path, opt.frame + '.jpg'))
+    color = misc.imresize(color, (height, width)).astype(np.int64)
+    # input intrinsic
+    intrinsic = []
+    with open(opt.intrinsic, 'r') as f:
+        line = f.readline()
+        while line:
+            intrinsic.append(line.split())
+            line = f.readline()
+    intrinsic = np.array(intrinsic, dtype=np.float32)
+    intrinsic = adjust_intrinsic(intrinsic, [640, 480], [height, width])
+    intrinsic_inv = np.linalg.inv(intrinsic)
+    # camera pose = extrinsic_inv
+    pose = []
+    with open(os.path.join(opt.pose_path, opt.frame + '.txt'), 'r') as f:
+        line = f.readline()
+        while line:
+            pose.append(line.split())
+            line = f.readline()
+    extrinsic_inv = np.array(pose, dtype=np.float32)
+    # extrinsic = np.linalg.inv(extrinsic_inv)
+    # reshape depth color to [height * width,]
+    depth = depth.reshape(-1)
+    color = color.reshape(-1, 3)
+    # row -> i col -> j
+    row = torch.arange(height).view(height, 1).repeat(1, width).view(-1).float().cpu().numpy()
+    col = torch.arange(width).view(1, width).repeat(1, height).view(-1).float().cpu().numpy()
+    # pixel frame [depth * j, depth * i, depth, 1]
+    pixel_frame = np.zeros((4, depth.shape[0]))
+    pixel_frame[0, :][depth != 0] = depth[depth != 0] * col[depth != 0]
+    pixel_frame[1, :][depth != 0] = depth[depth != 0] * row[depth != 0]
+    pixel_frame[2, :][depth != 0] = depth[depth != 0]
+    pixel_frame[3, :][depth != 0] = 1
+    # camera coordinate [Xc, Yc, Zc, 1]
+    camera_coor = np.dot(intrinsic_inv, pixel_frame)
     # world coordinate [X, Y, Z, 1]
-    world_coor = torch.matmul(extrinsic_0_inv, camera_coor_0)
-    # source camera coordinate
-    camera_coor_1 = torch.matmul(extrinsic_1, world_coor)
-    # source pixel coordinate
-    pixel_frame_1 = torch.matmul(intrinsic, camera_coor_1)
-    # normalize d to generate i j
-    d = pixel_frame_1[:, 2, :]
-    pixel_frame_1[:, 0:2, :] /= d.unsqueeze(dim=1)
-    # Umax, Umin, Vmax, Vmin is bilinear interpolate 4 coordinate max/min u/v
-    u_1 = -torch.ones(depth_0.shape).to(device)
-    v_1 = -torch.ones(depth_0.shape).to(device)
-    u_2 = height * torch.ones(depth_0.shape).to(device)
-    v_2 = width * torch.ones(depth_0.shape).to(device)
-    u_1[depth_0!=0] = torch.floor(pixel_frame_1[:, 1, :][depth_0!=0])
-    v_1[depth_0!=0] = torch.floor(pixel_frame_1[:, 0, :][depth_0!=0])
-    u_2[depth_0!=0] = torch.ceil(pixel_frame_1[:, 1, :][depth_0!=0])
-    v_2[depth_0!=0] = torch.ceil(pixel_frame_1[:, 0, :][depth_0!=0])
-    # find valid coordinate for following operation
-    valid_coor = torch.ones(v_2.shape).to(device)
-    valid_coor[u_1 < 0] = 0
-    valid_coor[v_1 < 0] = 0
-    valid_coor[u_2 > height-1] = 0
-    valid_coor[v_2 > width-1] = 0
-    # generate 4 coordinate for bilinear interpolate
-    coor1 = torch.zeros(valid_coor.shape).to(device).long()
-    coor2 = torch.zeros(valid_coor.shape).to(device).long()
-    coor3 = torch.zeros(valid_coor.shape).to(device).long()
-    coor4 = torch.zeros(valid_coor.shape).to(device).long()
-    coor1[valid_coor!=0] = (u_1[valid_coor!=0] * width + v_1[valid_coor!=0]).long()
-    coor2[valid_coor!=0] = (u_1[valid_coor!=0] * width + v_2[valid_coor!=0]).long()
-    coor3[valid_coor!=0] = (u_2[valid_coor!=0] * width + v_1[valid_coor!=0]).long()
-    coor4[valid_coor!=0] = (u_2[valid_coor!=0] * width + v_2[valid_coor!=0]).long()
-    # because of batch_size is N, need to modify coor
-    b = height * width * torch.arange(batch_size).to(device).view(-1, 1).repeat(1, height * width).long()
-    coor1 = torch.where(valid_coor != 0, coor1 + b, coor1)
-    coor2 = torch.where(valid_coor != 0, coor2 + b, coor2)
-    coor3 = torch.where(valid_coor != 0, coor3 + b, coor3)
-    coor4 = torch.where(valid_coor != 0, coor4 + b, coor4)
-    # reshape feature to [c, batch_size * height * width]
-    feature_1 = feature_1.permute(1, 0, 2, 3).contiguous().view(channel, -1)
-    # projection feature
-    projection_img = torch.zeros((channel, batch_size, height * width)).to(device)
-    # w is bilinear interpolate weight, can be modify for every coordinate
-    w = 0.25
-    # projection
-    projection_img[:, valid_coor!=0] = w * feature_1[:, coor1[valid_coor != 0]] + w * feature_1[:, coor2[valid_coor != 0]] + \
-                                       w * feature_1[:, coor3[valid_coor != 0]] + w * feature_1[:, coor4[valid_coor != 0]]
-    return projection_img.contiguous().view(channel, batch_size, height, width).permute(1, 0, 2, 3)
+    world_coor = np.dot(extrinsic_inv, camera_coor)
+    # RGBA for pointCloud
+    RGBA = np.zeros((1, height * width)).astype(np.float64)
+    RGBA[0, :][depth != 0] = (0xff & color[:, 0][depth != 0]) << 16 | (0xff & color[:, 1][depth != 0]) << 8 | (
+                0xff & color[:, 0][depth != 0])
+    # generate points [X, Y, Z, RGBA]
+    points = np.concatenate((world_coor[0:3], RGBA), axis=0).T
+    points = np.array(points, dtype=np.float32)
+    # PCL Cloud
+    cloud = pcl.PointCloud_PointXYZRGBA()
+    cloud.from_array(points)
+    pcl.save(cloud, opt.frame + '.ply', format='ply')
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='PointCloud')
+    parser.add_argument('--depth_path',
+                        help='depth data folder',
+                        default='/media/xwj/Planar/ScanNet/2d_survey/scene0000_00/pred_depth/', type=str)
+    parser.add_argument('--color_path',
+                        help='depth data folder',
+                        default='/media/xwj/Planar/ScanNet/2d_survey/scene0000_00/pred_seg/', type=str)
+    parser.add_argument('--pose_path',
+                        help='depth data folder',
+                        default='/media/xwj/Planar/ScanNet/2d_survey/scene0000_00/pose/', type=str)
+    parser.add_argument('--intrinsic',
+                        help='intrinsic data file',
+                        default='/home/xwj/pointCloud-study/intrinsic_depth.txt', type=str)
+    parser.add_argument('--frame',
+                        help='intrinsic data file',
+                        default='100', type=str)
+    args = parser.parse_args()
+    frame_to_world(args)
