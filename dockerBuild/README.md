@@ -1,12 +1,67 @@
 # How to build docker image
-## 编写Dockerfile
+## 安装docker
+更新apt包索引
+```
+sudo apt-get update
+```
+安装包以允许apt通过HTTPS使用存储库
+```
+sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+```
+添加Docker的官方GPG密钥：
+```
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+```
+9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88通过搜索指纹的最后8个字符，验证您现在拥有带指纹的密钥 。
+```
+sudo apt-key fingerprint 0EBFCD88
+```
+使用以下命令设置稳定存储库。要添加nightly或test存储库，请在下面的命令中的单词后添加单词nightly或test（或两者）stable。
+```
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+```
+再次更新apt包索引
+```
+sudo apt-get update
+```
+安装最新版本的Docker Engine - 社区和容器
+```
+sudo apt-get install docker-ce docker-ce-cli containerd.io
+```
+最后，通过运行hello-world 映像验证是否正确安装了Docker Engine
+```
+sudo docker run hello-world
+```
+[参考网址](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-engine---community-1)
+## 使用docker
+### 列出本机正在运行的容器
+```
+docker container ls
+```
+### 列出本机所有容器，包括终止运行的容器
+```
+docker container ls --all
+```
+### 终止运行的容器文件
+```
+docker container rm [containerID]
+```
+### 编写Dockerfile
 模板见Dockerfile, 缺什么加上什么。
-## 创建image
+### 创建image
 在Dockerfile同目录下，输入下面命令
 ```bash
 docker image build -t [imageName]:[tag] .
 ```
-## 上传到dockerhub
+### 上传到dockerhub
 登录
 ```bash
 docker login
@@ -19,7 +74,7 @@ docker image tag [imageName] [username]/[repository]:[tag]
 ```bash
 docker image push [username]/[repository]:[tag]
 ```
-## 本地运行镜像
+### 本地运行镜像
 ```bash
 docker container run --rm -p 8000:3000 -it [imageName]:[tag] /bin/bash
 ```
