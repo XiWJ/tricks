@@ -59,6 +59,14 @@ sudo service docker restart
 ```
 newgrp - docker
 ```
+### 列出本机的所有 image 文件
+```
+docker image ls
+```
+### 删除 image 文件
+```
+docker image rm [imageName]
+```
 ### 列出本机正在运行的容器
 ```
 docker container ls
