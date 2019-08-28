@@ -23,3 +23,6 @@ docker image push [username]/[repository]:[tag]
 ```bash
 docker container run --rm -p 8000:3000 -it [imageName]:[tag] /bin/bash
 ```
+## 参考教程
+[docker教程](http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html)<br>
+[anaconda_Dockerfile](https://github.com/Leinao/LeinaoPAI/tree/master/images/anaconda_3_tf_12_torch_10_cv_34_cuda_90)
