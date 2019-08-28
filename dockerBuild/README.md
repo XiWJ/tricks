@@ -42,6 +42,23 @@ sudo docker run hello-world
 ```
 [参考网址](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-engine---community-1)
 ## 使用docker
+### 解决docker加sudo方法
+创建docker组
+```
+sudo groupadd docker
+```
+将当前用户加入docker组, 比如 {USER}=xwj
+```
+sudo gpasswd -a {USER} docker
+```
+重启服务
+```
+sudo service docker restart
+```
+刷新docker成员
+```
+newgrp - docker
+```
 ### 列出本机正在运行的容器
 ```
 docker container ls
