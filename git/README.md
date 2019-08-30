@@ -27,7 +27,7 @@ git push -u origin master
 更加快速便捷管理自己的repo, 使用github desktop,Windows下直接谷歌下载, Linux使用下面的链接安装<br>
 [GitHub Desktop for Linux](https://github.com/shiftkey/desktop)
 ## Q&A
-### Q: fatal: unable to access 'https://github.com/XiWJ/Lihang/': Could not resolve proxy: proxy.server.com
+### Q: fatal: unable to access 'https://github.com/XiWJ/*****/': Could not resolve proxy: proxy.server.com
 ```
 git config --global --unset http.proxy
 ```
