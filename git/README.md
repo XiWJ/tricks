@@ -23,3 +23,12 @@ git pull origin master
 ```bash
 git push -u origin master
 ```
+## GitHub Desktop for Linux
+更加快速便捷管理自己的repo, 使用github desktop,Windows下直接谷歌下载, Linux使用下面的链接安装<br>
+[GitHub Desktop for Linux](https://github.com/shiftkey/desktop)
+## Q&A
+### Q: fatal: unable to access 'https://github.com/XiWJ/Lihang/': Could not resolve proxy: proxy.server.com
+```
+git config --global --unset http.proxy
+```
+[参考链接](https://github.com/desktop/desktop/issues/3878#issuecomment-436653069)
