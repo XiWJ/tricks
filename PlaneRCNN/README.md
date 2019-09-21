@@ -32,10 +32,12 @@ if options.trainingMode != '':
     layers = layer_regex[options.trainingMode]
     model.set_trainable(layers)
     pass
+# trainable model parameters
+trainables_wo_bn = [param for name, param in model.named_parameters() if param.requires_grad and not 'bn' in name]
 ```
 ## 固定batch norm层
 ```python
-# in class model.init()
+# in class model.init() or model.predict()
 ## Fix batch norm layers
 def set_bn_fix(m):
     classname = m.__class__.__name__
