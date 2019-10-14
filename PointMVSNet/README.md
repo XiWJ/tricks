@@ -505,8 +505,8 @@ cam = io.load_cam_dtu(open(paths["view_cam_paths"][view]),
 ## grid_sample
 ```python
 def feature_fetcher(pts): 
-# pts reference view 点云的世界坐标
-with torch.no_grad():
+    # pts reference view 点云的世界坐标
+    with torch.no_grad():
         num_pts = pts.size(2) # point数目
         pts_expand = pts.unsqueeze(1).contiguous().expand(batch_size, num_view, 3, num_pts) \
             .contiguous().view(curr_batch_size, 3, num_pts) # 维度变换
