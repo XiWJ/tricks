@@ -456,7 +456,7 @@ image = norm_image(image)
 ```
 
 ## load_cam_dtu
-加载camera.txt文件，load_cam_dtu函数不重要，**重要的是file.read().split()**的运用，位置在[io.py](https://github.com/callmeray/PointMVSNet/blob/master/pointmvsnet/utils/io.py)
+加载camera.txt文件，load_cam_dtu函数不重要， **重要的是file.read().split()** 的运用，位置在[io.py](https://github.com/callmeray/PointMVSNet/blob/master/pointmvsnet/utils/io.py)
 ```python
 def load_cam_dtu(file, num_depth=0, interval_scale=1.0):
     """ read camera txt file """
