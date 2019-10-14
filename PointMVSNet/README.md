@@ -507,37 +507,37 @@ cam = io.load_cam_dtu(open(paths["view_cam_paths"][view]),
 def feature_fetcher(pts): 
 	# pts reference view 点云的世界坐标
 	with torch.no_grad():
-    num_pts = pts.size(2) # point数目
-    pts_expand = pts.unsqueeze(1).contiguous().expand(batch_size, num_view, 3, num_pts) \
-        .contiguous().view(curr_batch_size, 3, num_pts) # 维度变换
-    if cam_extrinsics is None:
-        transformed_pts = pts_expand.type(torch.float).transpose(1, 2)
-    else:
-        cam_extrinsics = cam_extrinsics.view(curr_batch_size, 3, 4)	# 相机外参
-        R = torch.narrow(cam_extrinsics, 2, 0, 3)					# 旋转矩阵
-        t = torch.narrow(cam_extrinsics, 2, 3, 1).expand(curr_batch_size, 3, num_pts)	# 平移向量
-        transformed_pts = torch.bmm(R, pts_expand) + t				# Q^c = RQ^w + t 相机坐标 reference view下
-        transformed_pts = transformed_pts.type(torch.float).transpose(1, 2)
-    x = transformed_pts[..., 0]		# Q^c = [X^c, Y^c, Z^c]
-    y = transformed_pts[..., 1]		# Y^c
-    z = transformed_pts[..., 2]		# Z^c
+        num_pts = pts.size(2) # point数目
+        pts_expand = pts.unsqueeze(1).contiguous().expand(batch_size, num_view, 3, num_pts) \
+            .contiguous().view(curr_batch_size, 3, num_pts) # 维度变换
+        if cam_extrinsics is None:
+            transformed_pts = pts_expand.type(torch.float).transpose(1, 2)
+        else:
+            cam_extrinsics = cam_extrinsics.view(curr_batch_size, 3, 4)	# 相机外参
+            R = torch.narrow(cam_extrinsics, 2, 0, 3)					# 旋转矩阵
+            t = torch.narrow(cam_extrinsics, 2, 3, 1).expand(curr_batch_size, 3, num_pts)	# 平移向量
+            transformed_pts = torch.bmm(R, pts_expand) + t				# Q^c = RQ^w + t 相机坐标 reference view下
+            transformed_pts = transformed_pts.type(torch.float).transpose(1, 2)
+        x = transformed_pts[..., 0]		# Q^c = [X^c, Y^c, Z^c]
+        y = transformed_pts[..., 1]		# Y^c
+        z = transformed_pts[..., 2]		# Z^c
 
-    normal_uv = torch.cat(
-        [torch.div(x, z).unsqueeze(-1), torch.div(y, z).unsqueeze(-1), torch.ones_like(x).unsqueeze(-1)],
-        dim=-1)		# uv = 1/Z^c * Q^c = [u, v, 1] 归一化
-    uv = torch.bmm(normal_uv, cam_intrinsics.transpose(1, 2)) # q = K dot Q^c / Z^c = K dot uv, 像素坐标
-    uv = uv[:, :, :2]
+        normal_uv = torch.cat(
+            [torch.div(x, z).unsqueeze(-1), torch.div(y, z).unsqueeze(-1), torch.ones_like(x).unsqueeze(-1)],
+            dim=-1)		# uv = 1/Z^c * Q^c = [u, v, 1] 归一化
+        uv = torch.bmm(normal_uv, cam_intrinsics.transpose(1, 2)) # q = K dot Q^c / Z^c = K dot uv, 像素坐标
+        uv = uv[:, :, :2]
 
-    grid = (uv - 0.5).view(curr_batch_size, num_pts, 1, 2)	# 像素坐标 [u, v]
-    grid[..., 0] = (grid[..., 0] / float(width - 1)) * 2 - 1.0 # u
-    grid[..., 1] = (grid[..., 1] / float(height - 1)) * 2 - 1.0 # v
+        grid = (uv - 0.5).view(curr_batch_size, num_pts, 1, 2)	# 像素坐标 [u, v]
+        grid[..., 0] = (grid[..., 0] / float(width - 1)) * 2 - 1.0 # u
+        grid[..., 1] = (grid[..., 1] / float(height - 1)) * 2 - 1.0 # v
 
-	# grid_sample实际上是一种采样, 根据gird存储的点云坐标信息, 去feature_maps对应位置找特征向量, 保存在最后的pts_feature中.
-    # feature_maps (B, C, H, W)
-    # grid 		(B, point_num, 1, 2) 
-    # grid[3] -> [2] -> [u, v] 坐标, 归一化(-1, 1), [u] -1代表最左边, [v] -1代表最上边.
-    # grid中坐标超过 (-1, 1)的, 在feature_maps找不到, 直接填充0.
-	pts_feature = F.grid_sample(feature_maps, grid, mode=self.mode) 
+        # grid_sample实际上是一种采样, 根据gird存储的点云坐标信息, 去feature_maps对应位置找特征向量, 保存在最后的pts_feature中.
+        # feature_maps (B, C, H, W)
+        # grid 		(B, point_num, 1, 2) 
+        # grid[3] -> [2] -> [u, v] 坐标, 归一化(-1, 1), [u] -1代表最左边, [v] -1代表最上边.
+        # grid中坐标超过 (-1, 1)的, 在feature_maps找不到, 直接填充0.
+        pts_feature = F.grid_sample(feature_maps, grid, mode=self.mode) 
 ```
 
 ## 自定义Conv
