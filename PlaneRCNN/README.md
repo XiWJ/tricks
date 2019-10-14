@@ -46,3 +46,27 @@ def set_bn_fix(m):
 
 self.apply(set_bn_fix)
 ```
+
+## Sequential 搭建网络
+```python
+# in model.init()
+self.deconv4 = nn.Sequential(
+            torch.nn.Upsample(scale_factor=2, mode='nearest'),
+            nn.Conv2d(256, 128, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(128, eps=0.001, momentum=0.01),
+            nn.ReLU(inplace=True)
+        )
+        
+# in model.forward()
+x = self.deconv4(torch.cat([self.conv4(feature_maps[3]), x], dim=1))
+```
+
+## 更换list次序
+```python
+## Convert from list of lists of level outputs to list of lists
+## of outputs across levels.
+## e.g. [[a1, b1, c1], [a2, b2, c2]] => [[a1, a2], [b1, b2], [c1, c2]]
+outputs = list(zip(*layer_outputs))
+outputs = [torch.cat(list(o), dim=1) for o in outputs]
+rpn_class_logits, rpn_class, rpn_bbox = outputs
+```
