@@ -28,7 +28,6 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list &&
         ca-certificates \
         cmake \
         wget \
-        curl \
         git \
         vim \
         htop \
@@ -46,20 +45,19 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list &&
 # ==================================================================
 # anaconda
 # ------------------------------------------------------------------
-    curl -o /tmp/anaconda.sh https://mirrors.tuna.tsinghua.edu.cn/anaconda/archive/Anaconda3-5.2.0-Linux-x86_64.sh && \
-    chmod +x /tmp/anaconda.sh && \
-    bash /tmp/anaconda.sh -b -p ~/anaconda3 && \
-    rm /tmp/anaconda.sh && \
-    echo 'export PATH="/root/anaconda3/bin:$PATH"' >> ~/.bashrc && \
-    . ~/.bashrc  && \
+    wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+        /bin/bash ~/miniconda.sh -b -p /opt/conda && \
+        rm ~/miniconda.sh && \
+        #echo "export PATH=/opt/conda/bin:$PATH" >> ~/.bashrc && \
 # ==================================================================
 # conda
 # ------------------------------------------------------------------
     conda config --set show_channel_urls yes && \
     conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/ && \
     conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/ && \
-    conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/ && \
     conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch/ && \
+    $CONDA_INSTALL \
+        python=3.6 && \
     $CONDA_INSTALL \
         pillow \
         pytorch=1.0.1 \
@@ -79,12 +77,12 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list &&
         tensorboardX \
         && \
     conda clean -y --all && \
-# ==================================================================
-# PointMVSNet
-# ------------------------------------------------------------------
-    $GIT_CLONE --recursive git@github.com:callmeray/PointMVSNet.git /usr/local/PointMVSNet && \
-    cd /usr/local/PointMVSNet && \
-    bash compile.sh && \
+## ==================================================================
+## PointMVSNet
+## ------------------------------------------------------------------
+#    $GIT_CLONE --recursive git@github.com:callmeray/PointMVSNet.git /usr/local/PointMVSNet && \
+#    cd /usr/local/PointMVSNet && \
+#    bash compile.sh && \
 # ==================================================================
 # config & cleanup
 # ------------------------------------------------------------------
