@@ -1,10 +1,9 @@
 # ==================================================================
 # module list
 # ------------------------------------------------------------------
-# python        3.7    (conda)
+# python        3.6    (conda)
 # pytorch       1.0.1  (conda)
-# tensorboardx  1.6    (conda)
-# ffpmeg        4.1    (conda)
+# point-mvsnet  1.0    (pip)
 # ==================================================================
 FROM nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
 
@@ -29,6 +28,7 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list &&
         ca-certificates \
         cmake \
         wget \
+        curl \
         git \
         vim \
         htop \
@@ -61,45 +61,30 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list &&
     conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/ && \
     conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/pytorch/ && \
     $CONDA_INSTALL \
-        python=3.7 && \
-    $CONDA_INSTALL \
-        ipython \
-        Cython \
-        ffmpeg \
-        pytorch \
-        sk-video \
-        imageio \
-        h5py \
-        tensorboardx \
+        pillow \
+        pytorch=1.0.1 \
         torchvision \
-        cffi \
         cudatoolkit=9.0 \
         && \
     $PIP_INSTALL \
-        lmdb \
-        opencv-contrib-python \
-        matplotlib \
+        progressbar2>=3.0 \
+        numpy>=1.13 \
+        opencv_python>=3.2 \
+        scikit-learn>=0.18 \
+        scipy>=0.18 \
+        matplotlib>=1.5 \
+        Pillow>=3.1.2 \
+        yacs \
         tqdm \
-        scikit-learn \
-        pytest \
-        wget \
-        gym \
+        tensorboardX \
         && \
     conda clean -y --all && \
 # ==================================================================
-# warpctc
+# PointMVSNet
 # ------------------------------------------------------------------
-    # $GIT_CLONE https://github.com/SeanNaren/warp-ctc.git /usr/local/warp-ctc && \
-    # mkdir -p /usr/local/warp-ctc/build && cd /usr/local/warp-ctc/build && \
-    # cmake .. && \
-    # make -j 4 && \
-    # cd /usr/local/warp-ctc/pytorch_binding && python setup.py install && \
-# ==================================================================
-# ctcdecode
-# ------------------------------------------------------------------
-    $GIT_CLONE --recursive https://github.com/Rhythmblue/ctcdecode.git /usr/local/ctcdecode && \
-    cd /usr/local/ctcdecode && \
-    pip install -i https://pypi.tuna.tsinghua.edu.cn/simple . && \
+    $GIT_CLONE --recursive git@github.com:callmeray/PointMVSNet.git /usr/local/PointMVSNet && \
+    cd /usr/local/PointMVSNet && \
+    bash compile.sh && \
 # ==================================================================
 # config & cleanup
 # ------------------------------------------------------------------
