@@ -80,7 +80,7 @@ docker container ls --all
 docker container rm [containerID]
 ```
 ### 编写Dockerfile
-模板见Dockerfile, 缺什么加上什么。两种Dockerfile，分别是[pip_install]()和[conda_install]().
+模板见Dockerfile, 缺什么加上什么。两种Dockerfile，分别是[pip_install](https://github.com/XiWJ/tricks/blob/master/dockerBuild/pip_install/Dockerfile)和[conda_install](https://github.com/XiWJ/tricks/blob/master/dockerBuild/conda_install/Dockerfile).
 ### 创建image
 在Dockerfile同目录下，输入下面命令
 ```bash
