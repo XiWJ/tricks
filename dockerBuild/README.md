@@ -139,3 +139,15 @@ Address 2: 216.58.198.174 lhr25s10-in-f14.1e100.net
 ```
 sudo service docker restart
 ```
+
+## 挂载一个主机目录作为数据卷
+使用 ```--mount``` 标记可以指定挂载一个本地主机的目录到容器中去。
+```
+$ docker run -d -P \
+    --name web \
+    # -v /src/webapp:/opt/webapp \
+    --mount type=bind,source=/src/webapp,target=/opt/webapp \
+    training/webapp \
+    python app.py
+```
+上面的命令加载主机的 ```/src/webapp``` 目录到容器的 ```/opt/webapp```目录。这个功能在进行测试的时候十分方便，比如用户可以放置一些程序到本地目录中，来查看容器是否正常工作。本地目录的路径必须是绝对路径，以前使用 ```-v``` 参数时如果本地目录不存在 Docker 会自动为你创建一个文件夹，现在使用 ```--mount``` 参数时如果本地目录不存在，Docker 会报错。
