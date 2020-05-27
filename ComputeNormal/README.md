@@ -1,23 +1,21 @@
-# Compute surface normal with depth GT
-## 算法
-```python
-input: D Depth map，K Camera intrinsic
-output: N Surface normal map
-def GenerateSurfaceNormal(D, K)
-    P (X, Y, Z) <-- f(D, K)
-    for i in D:
-        S = [p_i]
-        for j in i neighborings:
-            S <-- P_j
-		# 最小二乘fitting
-        N_i <-- least_squares_fitting(S)
-	# 双边滤波
-    bilateralFilter(N, sigma_s=24, sigma_I=0.2)
-    
-    return N
+# Compute normal vector from depth
+## matlab code
+代码参考[Data-driven 3d primitives for single image understanding](https://web.eecs.umich.edu/~fouhey/2013/3dp/index.html)
+
+使用matlab库函数surfnorm
+
+运行
 ```
-## 运行
-matlab version: 2017a+
+matlab -nodesktop -nosplash -r generate_normal_gt_demon
+or
+bash run.sh
 ```
-matlab generate_normal_gt_demon
+## pytorch code
+理论参考[GeoNet](https://github.com/xjqi/GeoNet)，自己采用pytorch实现。
+
+Note: pytorch==1.5.0 for torch.det()
+
+运行
+```
+python ComputeNormal.py
 ```
