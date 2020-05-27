@@ -14,6 +14,7 @@ sudo apt-get update
 sudo apt-get upgrade
 sudo add-apt-repository ppa:graphics-drivers/ppa
 sudo apt-get update
+sudo apt-cache search nvidia-*  # 列出可下载的驱动
 sudo apt-get install nvidia-* nvidia-settings
 reboot
 nvidia-smi
