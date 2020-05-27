@@ -13,7 +13,7 @@ bash run.sh
 ## pytorch code
 理论参考[GeoNet](https://github.com/xjqi/GeoNet)，自己采用pytorch实现。
 
-Note: pytorch==1.5.0 for torch.det()
+Note: pytorch>=1.4.0 for torch.det()
 
 运行
 ```
