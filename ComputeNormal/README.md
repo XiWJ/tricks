@@ -19,3 +19,15 @@ Note: pytorch>=1.3.1 for torch.det()
 ```
 python ComputeNormal.py
 ```
+
+# Normal to depth
+理论参考[GeoNet](https://github.com/xjqi/GeoNet)，自己采用pytorch实现。
+
+Note: pytorch>=1.3.1 for torch.det()
+
+运行
+```
+python Normal2Depth.py
+```
+
+[init_depth, normal] -> refined depth
