@@ -74,3 +74,19 @@ class AverageMeter(object):
                                  betas=(args.momentum, args.beta),
                                  weight_decay=args.weight_decay)
 ```
+- log日志记录并返回到console
+- 参考[FrameNet](https://github.com/hjwdzh/FrameNet/blob/master/src/train_affine_dorn.py)
+```python
+args = parser.parse_args()
+if args.save != "":
+    if not os.path.exists(args.save):
+        os.mkdir(args.save)
+    fp = open(args.save + '/logs.txt', 'w')
+def log(str):
+    if args.save != "":
+        fp.write("%s\n" % (str))
+        fp.flush()
+    print(str)
+def main():
+    log('=> will save everything to {}'.format(args.save_path))
+```
