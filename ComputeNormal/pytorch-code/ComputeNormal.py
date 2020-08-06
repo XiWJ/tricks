@@ -14,7 +14,7 @@ def get_points_coordinate(depth, instrinsic_inv, device="cuda"):
     xyz = torch.stack((x, y, torch.ones_like(x)))  # [3, H*W]
     xyz = torch.unsqueeze(xyz, 0).repeat(B, 1, 1)  # [B, 3, H*W]
     xyz = torch.matmul(instrinsic_inv, xyz) # [B, 3, H*W]
-    depth_xyz = xyz * depth.view(1, 1, -1)  # [B, 3, Ndepth, H*W]
+    depth_xyz = xyz * depth.view(B, 1, -1)  # [B, 3, Ndepth, H*W]
 
     return depth_xyz.view(B, 3, height, width)
 
