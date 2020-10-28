@@ -21,8 +21,8 @@ def get_points_coordinate(depth, instrinsic_inv, device="cuda"):
 if __name__ == '__main__':
     ## step.1 input
     # depth & intrinsic path
-    depth_path = "/home/xiweijie/github/tricks/ComputeNormal/pytorch-code/depth.npy"
-    intrinsic_path = "/home/xiweijie/github/tricks/ComputeNormal/pytorch-code/intrinsic.npy"
+    depth_path = "/home/xiweijie/github/z-nas/tmp/depth.npy"
+    intrinsic_path = "/home/xiweijie/github/z-nas/tmp/intrinsics.npy"
 
     # load depth & intrinsic
     depth_np = np.load(depth_path)
