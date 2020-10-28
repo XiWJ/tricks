@@ -33,14 +33,15 @@ def get_grid(shape, instrinsic_inv, device="cuda"):
 if __name__ == '__main__':
     ## step.1 input
     # normal & init_depth & intrinsic path
-    normal_path = "/home/xiweijie/github/tricks/ComputeNormal/normal-to-depth/6_normal.npy"
-    intrinsic_path = "/home/xiweijie/github/tricks/ComputeNormal/normal-to-depth/intrinsic.npy"
-    init_depth_path = "/home/xiweijie/github/tricks/ComputeNormal/normal-to-depth/6_gt_depth.npy"
+    normal_path = "/home/xiweijie/github/z-nas/tmp/nmap.npy"
+    intrinsic_path = "/home/xiweijie/github/z-nas/tmp/intrinsics.npy"
+    init_depth_path = "/home/xiweijie/github/z-nas/tmp/depth.npy"
 
     # load normal & init_depth & grid
     # i. normal
-    normal_np = np.load(normal_path)
+    normal_np = -np.load(normal_path)
     normal_torch = torch.from_numpy(normal_np).unsqueeze(0) # (B, h, w, 3)
+    B, h, w, C = normal_torch.size()
 
     # ii. init_depth
     init_depth_np = np.load(init_depth_path)
@@ -55,7 +56,7 @@ if __name__ == '__main__':
     # iv. get grid
     grid = get_grid(normal_torch.size(), intrinsic_inv_torch[:, :3, :3], device="cpu")  # (B, 3, h, w)
     grid_patch = F.unfold(grid, kernel_size=5, stride=1, padding=4, dilation=2)
-    grid_patch = grid_patch.view(1, 3, 25, 192, 256)
+    grid_patch = grid_patch.view(1, 3, 25, h, w)
 
     ## step.2 compute matrix A from init depth -> depth_data
     # points [X_c, Y_c, Z_c]
@@ -63,14 +64,14 @@ if __name__ == '__main__':
     point_matrix = F.unfold(points, kernel_size=5, stride=1, padding=4, dilation=2)
 
     # 0, 1, depth_data = matrix_a[depth_X_c, depth_Y_c, depth_Z_c]
-    matrix_a = point_matrix.view(1, 3, 25, 192, 256)  # (B, 3, 25, H, W)
+    matrix_a = point_matrix.view(1, 3, 25, h, w)  # (B, 3, 25, H, W)
     matrix_a = matrix_a.permute(0, 3, 4, 2, 1)  # (B, H, W, 25, 3)
     _, _, depth_data = torch.chunk(matrix_a, chunks=3, dim=4)
 
     ## step.3 compute Z_ji from Equ.7
     # i. normal neighbourhood matrix
     norm_matrix = F.unfold(normal_torch.permute(0, 3, 1, 2), kernel_size=5, stride=1, padding=4, dilation=2)
-    matrix_c = norm_matrix.view(1, 3, 25, 192, 256)
+    matrix_c = norm_matrix.view(1, 3, 25, h, w)
     matrix_c = matrix_c.permute(0, 3, 4, 2, 1)  # (B, H, W, 25, 3)
     normal_torch_expand = normal_torch.unsqueeze(-1)
 
