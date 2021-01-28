@@ -61,3 +61,15 @@ class ResNet(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 ```
+* CNN初始化权重
+
+    * <img src="https://latex.codecogs.com/png.latex? w = \mathcal{N}(0, \sqrt{\frac{2}{K*K*Out\_Channel}})">
+
+* BatchNormal初始化权重
+    * <img src="https://latex.codecogs.com/png.latex? w = 1, b = 0">
+    
+* CNN参数量与计算量
+    * 输入：[N, in_channel, H, W], 输出：[N, out_channel, H', W']
+    * 卷积核尺寸： [out_channel, in_channel, K, K]
+    * 参数量： out_channel * (K * K * in_channel + 1)
+    * 计算量： H' * W' * 参数量 = H' * W' * out_channel * (K * K * in_channel + 1)
