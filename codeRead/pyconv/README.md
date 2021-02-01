@@ -63,6 +63,8 @@ def conv1x1(in_planes, out_planes, stride=1):
 
 #### 2.3.2 build backbone_layers from ResNet
 [build_backbone_layers](./model/build_backbone_layers.py)
+
+其实是为了得到layer1, layer2, layer3, layer4
 ```python
 def build_backbone_layers(backbone_net, layers, pretrained, backbone_output_stride=8, convert_bn=None):
 
@@ -210,7 +212,7 @@ def resnet50(pretrained=False, **kwargs):
 ```
 
 #### 2.3.4 PyConvResNet
-[PyConvResNet](./model/backbones/pyconvresnet.py) line 182
+[PyConvResNet](./model/backbones/pyconvresnet.py) line 182  -- 对应于ResNet的Class ResNet(nn.Module)
 ```python
 class PyConvResNet(nn.Module):
 
@@ -320,7 +322,7 @@ class PyConvResNet(nn.Module):
 ```
 
 #### 2.3.5 PyConvBlock
-[PyConvBlock](./model/backbones/pyconvresnet.py) line 140
+[PyConvBlock](./model/backbones/pyconvresnet.py) line 140  -- 对应于 class Bottleneck(nn.Module):
 ```python
 class PyConvBlock(nn.Module):
     expansion = 4
