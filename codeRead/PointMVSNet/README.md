@@ -542,7 +542,7 @@ def feature_fetcher(pts):
 
 ## 自定义Conv
 自定义conv组合, conv+bn+relu结构, 并进行初始化<br>
-[conv.py](https://github.com/callmeray/PointMVSNet/blob/master/pointmvsnet/nn/conv.py)
+[conv.py](./model/nn/conv.py)
 ```python
 from torch import nn
 import torch.nn.functional as F

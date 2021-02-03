@@ -106,3 +106,47 @@ def main():
 self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
 x += self.pos_embedding[:, :(n + 1)]
 ```
+
+## 6. 记录输出到本地txt
+- log日志记录并返回到console
+- 参考[FrameNet](https://github.com/hjwdzh/FrameNet/blob/master/src/train_affine_dorn.py)
+```python
+args = parser.parse_args()
+if args.save != "":
+    if not os.path.exists(args.save):
+        os.mkdir(args.save)
+    fp = open(args.save + '/logs.txt', 'w')
+def log(str):
+    if args.save != "":
+        fp.write("%s\n" % (str))
+        fp.flush()
+    print(str)
+    
+def main():
+    log('=> will save everything to {}'.format(args.save_path))
+```
+
+## 6. 学习率warmup和调整
+详见: CascadeStereo
+
+args.lrepochs = "10,12,14,16:2"
+
+在10,12,14,16 epoch学习率除以2
+
+WarmupMultiStepLR函数在[util](./utils.py)中. lr_scheduler.step()放在loss.backward() 和 optimizer.step() 后面
+```python
+def train():
+    milestones = [len(TrainImgLoader) * int(epoch_idx) for epoch_idx in args.lrepochs.split(':')[0].split(',')]
+    lr_gamma = 1 / float(args.lrepochs.split(':')[1])
+    lr_scheduler = WarmupMultiStepLR(optimizer, milestones, gamma=lr_gamma, warmup_factor=1.0/3, warmup_iters=500, last_epoch=len(TrainImgLoader) * start_epoch - 1)
+
+    for epoch_idx in range(start_epoch, args.epochs):
+        ...
+        for batch_idx, sample in enumerate(TrainImgLoader): 
+            ...
+            output = model(...)
+            ...
+            loss.backward()
+            optimizer.step()
+            lr_scheduler.step()
+```
