@@ -16,11 +16,11 @@ from util.util import AverageMeter, intersectionAndUnion, check_makedirs, colori
 
 cv2.ocl.setUseOpenCL(False)
 os.chdir("../")
-print(os.getcwd())
+
 
 def get_parser():
     parser = argparse.ArgumentParser(description='PyTorch Semantic Segmentation')
-    parser.add_argument('--config', type=str, default='config/ade20k/ade20k_pyconvresnet50_pyconvsegnet.yaml', help='config file')
+    parser.add_argument('--config', type=str, default='config/ade20k/ade20k_pspnet50.yaml', help='config file')
     parser.add_argument('opts', help='see config/ade20k/ade20k_pspnet50.yaml for all options', default=None, nargs=argparse.REMAINDER)
     args = parser.parse_args()
     assert args.config is not None
@@ -47,8 +47,20 @@ def check(args):
     assert args.split in ['train', 'val', 'test']
     if args.arch == 'psp':
         assert (args.train_h - 1) % 8 == 0 and (args.train_w - 1) % 8 == 0
-    elif args.arch == 'pyconvsegnet':
-        assert (args.train_h - 1) % 8 == 0 and (args.train_w - 1) % 8 == 0
+    elif args.arch == 'psa':
+        if args.compact:
+            args.mask_h = (args.train_h - 1) // (8 * args.shrink_factor) + 1
+            args.mask_w = (args.train_w - 1) // (8 * args.shrink_factor) + 1
+        else:
+            assert (args.mask_h is None and args.mask_w is None) or (args.mask_h is not None and args.mask_w is not None)
+            if args.mask_h is None and args.mask_w is None:
+                args.mask_h = 2 * ((args.train_h - 1) // (8 * args.shrink_factor) + 1) - 1
+                args.mask_w = 2 * ((args.train_w - 1) // (8 * args.shrink_factor) + 1) - 1
+            else:
+                assert (args.mask_h % 2 == 1) and (args.mask_h >= 3) and (
+                        args.mask_h <= 2 * ((args.train_h - 1) // (8 * args.shrink_factor) + 1) - 1)
+                assert (args.mask_w % 2 == 1) and (args.mask_w >= 3) and (
+                        args.mask_w <= 2 * ((args.train_h - 1) // (8 * args.shrink_factor) + 1) - 1)
     else:
         raise Exception('architecture not supported yet'.format(args.arch))
 
@@ -87,46 +99,25 @@ def main():
     if not args.has_prediction:
         if args.arch == 'psp':
             from model.pspnet import PSPNet
-            model = PSPNet(layers=args.layers, classes=args.classes, zoom_factor=args.zoom_factor, pretrained=False,
-                           use_head_bottleneck=args.use_head_bottleneck)
-        elif args.arch == 'pyconvsegnet':
-            from model.pyconvsegnet import PyConvSegNet
-            model = PyConvSegNet(layers=args.layers, classes=args.classes, zoom_factor=args.zoom_factor,
-                              pretrained=args.pretrained, backbone_output_stride=args.backbone_output_stride,
-                              backbone_net=args.backbone_net)
-
+            model = PSPNet(layers=args.layers, classes=args.classes, zoom_factor=args.zoom_factor, pretrained=False)
+        elif args.arch == 'psa':
+            from model.psanet import PSANet
+            model = PSANet(layers=args.layers, classes=args.classes, zoom_factor=args.zoom_factor, compact=args.compact,
+                           shrink_factor=args.shrink_factor, mask_h=args.mask_h, mask_w=args.mask_w,
+                           normalization_factor=args.normalization_factor, psa_softmax=args.psa_softmax, pretrained=False)
         logger.info(model)
         model = torch.nn.DataParallel(model).cuda()
         cudnn.benchmark = True
-
         if os.path.isfile(args.model_path):
             logger.info("=> loading checkpoint '{}'".format(args.model_path))
             checkpoint = torch.load(args.model_path)
-            model.load_state_dict(checkpoint, strict=False)
+            model.load_state_dict(checkpoint['state_dict'], strict=False)
             logger.info("=> loaded checkpoint '{}'".format(args.model_path))
         else:
             raise RuntimeError("=> no checkpoint found at '{}'".format(args.model_path))
         test(test_loader, test_data.data_list, model, args.classes, mean, std, args.base_size, args.test_h, args.test_w, args.scales, gray_folder, color_folder, colors)
     if args.split != 'test':
-        cal_acc(test_data.data_list, gray_folder, args.classes, names, args.ignore_label)
-
-    #run also the tes/val on the best mIoU model
-    if args.best_mIoU_model_path:
-        logger.info("\n\nPerforming the val/test on the best mIoU model!\n")
-        gray_folder = os.path.join(args.best_mIoU_save_folder, 'gray')
-        color_folder = os.path.join(args.best_mIoU_save_folder, 'color')
-        if not args.has_prediction:
-            if os.path.isfile(args.best_mIoU_model_path):
-                logger.info("=> loading checkpoint '{}'".format(args.best_mIoU_model_path))
-                checkpoint = torch.load(args.best_mIoU_model_path)
-                model.load_state_dict(checkpoint['state_dict'])
-                logger.info("=> loaded checkpoint '{}'".format(args.best_mIoU_model_path))
-            else:
-                raise RuntimeError("=> no checkpoint found at '{}'".format(args.best_mIoU_model_path))
-            test(test_loader, test_data.data_list, model, args.classes, mean, std, args.base_size, args.test_h, args.test_w,
-                 args.scales, gray_folder, color_folder, colors)
-        if args.split != 'test':
-            cal_acc(test_data.data_list, gray_folder, args.classes, names, args.ignore_label)
+        cal_acc(test_data.data_list, gray_folder, args.classes, names)
 
 
 def net_process(model, image, mean, std=None, flip=True):
@@ -199,12 +190,6 @@ def test(test_loader, data_list, model, classes, mean, std, base_size, crop_h, c
         input = np.squeeze(input.numpy(), axis=0)
         image = np.transpose(input, (1, 2, 0))
         h, w, _ = image.shape
-
-        ########### to keep the same image size
-        if base_size == 0:
-            base_size = max(h, w)
-        ###########
-
         prediction = np.zeros((h, w, classes), dtype=float)
         for scale in scales:
             long_size = round(scale * base_size)
@@ -239,7 +224,7 @@ def test(test_loader, data_list, model, classes, mean, std, base_size, crop_h, c
     logger.info('<<<<<<<<<<<<<<<<< End Evaluation <<<<<<<<<<<<<<<<<')
 
 
-def cal_acc(data_list, pred_folder, classes, names, ignore_label):
+def cal_acc(data_list, pred_folder, classes, names):
     intersection_meter = AverageMeter()
     union_meter = AverageMeter()
     target_meter = AverageMeter()
@@ -248,7 +233,7 @@ def cal_acc(data_list, pred_folder, classes, names, ignore_label):
         image_name = image_path.split('/')[-1].split('.')[0]
         pred = cv2.imread(os.path.join(pred_folder, image_name+'.png'), cv2.IMREAD_GRAYSCALE)
         target = cv2.imread(target_path, cv2.IMREAD_GRAYSCALE)
-        intersection, union, target = intersectionAndUnion(pred, target, classes, ignore_label)
+        intersection, union, target = intersectionAndUnion(pred, target-1, classes)
         intersection_meter.update(intersection)
         union_meter.update(union)
         target_meter.update(target)

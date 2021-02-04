@@ -20,9 +20,11 @@ from tensorboardX import SummaryWriter
 from util import dataset, transform, config
 from util.util import AverageMeter, poly_learning_rate, intersectionAndUnionGPU, find_free_port
 
+# 关闭opencv多线程
 cv2.ocl.setUseOpenCL(False)
 cv2.setNumThreads(0)
 # os.chdir("../")
+# print(os.getcwd())
 
 
 def get_parser():
@@ -31,9 +33,9 @@ def get_parser():
     parser.add_argument('opts', help='see config/ade20k/ade20k_pspnet50.yaml for all options', default=None, nargs=argparse.REMAINDER)
     args = parser.parse_args()
     assert args.config is not None
-    cfg = config.load_cfg_from_cfg_file(args.config)
+    cfg = config.load_cfg_from_cfg_file(args.config)# 加载参数
     if args.opts is not None:
-        cfg = config.merge_cfg_from_list(cfg, args.opts)
+        cfg = config.merge_cfg_from_list(cfg, args.opts)# 合并参数
     return cfg
 
 
@@ -81,9 +83,12 @@ def check(args):
 
 
 def main():
+    ## step.1 读取参数配置
     args = get_parser()
+    # 1.1 检查参数配置对不对
     check(args)
     os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(str(x) for x in args.train_gpu)
+    # 1.2 手动设置随机种子
     if args.manual_seed is not None:
         random.seed(args.manual_seed)
         np.random.seed(args.manual_seed)
@@ -94,6 +99,7 @@ def main():
         cudnn.deterministic = True
     if args.dist_url == "env://" and args.world_size == -1:
         args.world_size = int(os.environ["WORLD_SIZE"])
+    # 1.3 设置多线程
     args.distributed = args.world_size > 1 or args.multiprocessing_distributed
     args.ngpus_per_node = len(args.train_gpu)
     if len(args.train_gpu) == 1:
@@ -104,7 +110,7 @@ def main():
         port = find_free_port()
         args.dist_url = f"tcp://127.0.0.1:{port}"
         args.world_size = args.ngpus_per_node * args.world_size
-        mp.spawn(main_worker, nprocs=args.ngpus_per_node, args=(args.ngpus_per_node, args))
+        mp.spawn(main_worker, nprocs=args.ngpus_per_node, args=(args.ngpus_per_node, args))# 多线程运行main_worker
     else:
         main_worker(args.train_gpu, args.ngpus_per_node, args)
 
@@ -112,14 +118,19 @@ def main():
 def main_worker(gpu, ngpus_per_node, argss):
     global args
     args = argss
+
+    ## step.1 设置分布式相关参数
+    # 1.1 分布式初始化
     if args.distributed:
         if args.dist_url == "env://" and args.rank == -1:
             args.rank = int(os.environ["RANK"])
         if args.multiprocessing_distributed:
             args.rank = args.rank * ngpus_per_node + gpu
-        dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank)
+        dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank)# 分布式初始化
 
-    criterion = nn.CrossEntropyLoss(ignore_index=args.ignore_label)
+    ## step.2 构建网络
+    # ---------------------------------------------- 根据实际情况自己写 ---------------------------------------------#
+    criterion = nn.CrossEntropyLoss(ignore_index=args.ignore_label)# 交叉熵损失函数, 根据情况自己修改
     if args.arch == 'psp':
         from model.pspnet import PSPNet
         model = PSPNet(layers=args.layers, classes=args.classes, zoom_factor=args.zoom_factor, criterion=criterion)
@@ -132,33 +143,42 @@ def main_worker(gpu, ngpus_per_node, argss):
                        normalization_factor=args.normalization_factor, psa_softmax=args.psa_softmax, criterion=criterion)
         modules_ori = [model.layer0, model.layer1, model.layer2, model.layer3, model.layer4]
         modules_new = [model.psa, model.cls, model.aux]
-    params_list = []
+    # ---------------------------------------------------- END ---------------------------------------------------#
+
+    ## step.3 设置优化器
+    params_list = []# 模型参数列表
     for module in modules_ori:
-        params_list.append(dict(params=module.parameters(), lr=args.base_lr))
+        params_list.append(dict(params=module.parameters(), lr=args.base_lr))# 原来backbone网络 学习率 0.01
     for module in modules_new:
-        params_list.append(dict(params=module.parameters(), lr=args.base_lr * 10))
+        params_list.append(dict(params=module.parameters(), lr=args.base_lr * 10))# 新加入预测网络 学习率 0.1
     args.index_split = 5
-    optimizer = torch.optim.SGD(params_list, lr=args.base_lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(params_list, lr=args.base_lr, momentum=args.momentum, weight_decay=args.weight_decay)# SGD优化器
+    # 3.x 设置sync_bn　from torch.nn.SyncBatchNorm
     if args.sync_bn:
         model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
+    ## step.4 多线程分布式工作
+    # 4.1 判断是否是在主进程中, 如果在进行如下程序
     if main_process():
         global logger, writer
-        logger = get_logger()
-        writer = SummaryWriter(args.save_path)
-        logger.info(args)
+        logger = get_logger()# 设置logger
+        writer = SummaryWriter(args.save_path)# 设置writer
+        logger.info(args)# 输出参数列表
         logger.info("=> creating model ...")
         logger.info("Classes: {}".format(args.classes))
-        logger.info(model)
+        logger.info(model)# 输出网络列表
+    # 4.2 分布式工作
     if args.distributed:
-        torch.cuda.set_device(gpu)
-        args.batch_size = int(args.batch_size / ngpus_per_node)
-        args.batch_size_val = int(args.batch_size_val / ngpus_per_node)
-        args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
-        model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[gpu])
+        torch.cuda.set_device(gpu)# 指定编号为gpu的那一张显卡
+        args.batch_size = int(args.batch_size / ngpus_per_node)# 每张卡的训练的batch size
+        args.batch_size_val = int(args.batch_size_val / ngpus_per_node)# 每张卡的评测的batch size
+        args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)# 每张卡工作的数目
+        model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[gpu])# 加载torch分布式
     else:
-        model = torch.nn.DataParallel(model.cuda())
+        model = torch.nn.DataParallel(model.cuda())# 数据并行
 
+    ## step.5 加载网络权重
+    # 5.1 直接加载网络预权重
     if args.weight:
         if os.path.isfile(args.weight):
             if main_process():
@@ -170,7 +190,7 @@ def main_worker(gpu, ngpus_per_node, argss):
         else:
             if main_process():
                 logger.info("=> no weight found at '{}'".format(args.weight))
-
+    # 5.2 加载上次没训练完的模型权重
     if args.resume:
         if os.path.isfile(args.resume):
             if main_process():
@@ -186,6 +206,8 @@ def main_worker(gpu, ngpus_per_node, argss):
             if main_process():
                 logger.info("=> no checkpoint found at '{}'".format(args.resume))
 
+    ## step.7 设置数据loader
+    # 7.1 loader参数设置
     value_scale = 255
     mean = [0.485, 0.456, 0.406]
     mean = [item * value_scale for item in mean]
@@ -199,14 +221,18 @@ def main_worker(gpu, ngpus_per_node, argss):
         transform.RandomHorizontalFlip(),
         transform.Crop([args.train_h, args.train_w], crop_type='rand', padding=mean, ignore_label=args.ignore_label),
         transform.ToTensor(),
-        transform.Normalize(mean=mean, std=std)])
+        transform.Normalize(mean=mean, std=std)])# 组合数据预处理
+
+    # 7.2 训练数据, 可以根据需要自己修改或写
+    # ---------------------------------------------- 根据实际情况自己写 ---------------------------------------------#
     train_data = dataset.SemData(split='train', data_root=args.data_root, data_list=args.train_list, transform=train_transform)
+    # ---------------------------------------------------- END ---------------------------------------------------#
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
+        train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)# 分布式下数据loader
     else:
         train_sampler = None
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=(train_sampler is None), num_workers=args.workers, pin_memory=True, sampler=train_sampler, drop_last=True)
-    if args.evaluate:
+    if args.evaluate:# evaluate数据
         val_transform = transform.Compose([
             transform.Crop([args.train_h, args.train_w], crop_type='center', padding=mean, ignore_label=args.ignore_label),
             transform.ToTensor(),
@@ -218,17 +244,23 @@ def main_worker(gpu, ngpus_per_node, argss):
             val_sampler = None
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size_val, shuffle=False, num_workers=args.workers, pin_memory=True, sampler=val_sampler)
 
+    ## step.8 主循环
     for epoch in range(args.start_epoch, args.epochs):
         epoch_log = epoch + 1
         if args.distributed:
             train_sampler.set_epoch(epoch)
+
+        # 8.1 训练函数
+        # ---------------------------------------------- 根据实际情况自己写 ---------------------------------------------#
         loss_train, mIoU_train, mAcc_train, allAcc_train = train(train_loader, model, optimizer, epoch)
+        # ---------------------------------------------------- END ---------------------------------------------------#
+
         if main_process():
             writer.add_scalar('loss_train', loss_train, epoch_log)
             writer.add_scalar('mIoU_train', mIoU_train, epoch_log)
             writer.add_scalar('mAcc_train', mAcc_train, epoch_log)
             writer.add_scalar('allAcc_train', allAcc_train, epoch_log)
-
+        # 8.2 保存checkpoint
         if (epoch_log % args.save_freq == 0) and main_process():
             filename = args.save_path + '/train_epoch_' + str(epoch_log) + '.pth'
             logger.info('Saving checkpoint to: ' + filename)
@@ -236,6 +268,7 @@ def main_worker(gpu, ngpus_per_node, argss):
             if epoch_log / args.save_freq > 2:
                 deletename = args.save_path + '/train_epoch_' + str(epoch_log - args.save_freq * 2) + '.pth'
                 os.remove(deletename)
+        # 训练一个epoch之后evaluate
         if args.evaluate:
             loss_val, mIoU_val, mAcc_val, allAcc_val = validate(val_loader, model, criterion)
             if main_process():
@@ -246,6 +279,7 @@ def main_worker(gpu, ngpus_per_node, argss):
 
 
 def train(train_loader, model, optimizer, epoch):
+    ## step.1 设置评价参数,随时更新
     batch_time = AverageMeter()
     data_time = AverageMeter()
     main_loss_meter = AverageMeter()
@@ -258,6 +292,8 @@ def train(train_loader, model, optimizer, epoch):
     model.train()
     end = time.time()
     max_iter = args.epochs * len(train_loader)
+
+    ## step.2 epoch内部循环
     for i, (input, target) in enumerate(train_loader):
         data_time.update(time.time() - end)
         if args.zoom_factor != 8:
@@ -267,16 +303,17 @@ def train(train_loader, model, optimizer, epoch):
             target = F.interpolate(target.unsqueeze(1).float(), size=(h, w), mode='bilinear', align_corners=True).squeeze(1).long()
         input = input.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
-        output, main_loss, aux_loss = model(input, target)
+        output, main_loss, aux_loss = model(input, target)# 输出, 损失函数
         if not args.multiprocessing_distributed:
             main_loss, aux_loss = torch.mean(main_loss), torch.mean(aux_loss)
         loss = main_loss + args.aux_weight * aux_loss
 
+        ## step.3 反向传播
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        n = input.size(0)
+        n = input.size(0)# 一张卡的batch
         if args.multiprocessing_distributed:
             main_loss, aux_loss, loss = main_loss.detach() * n, aux_loss * n, loss * n  # not considering ignore pixels
             count = target.new_tensor([n], dtype=torch.long)
@@ -284,6 +321,7 @@ def train(train_loader, model, optimizer, epoch):
             n = count.item()
             main_loss, aux_loss, loss = main_loss / n, aux_loss / n, loss / n
 
+        ## step.4 更新评价数据
         intersection, union, target = intersectionAndUnionGPU(output, target, args.classes, args.ignore_label)
         if args.multiprocessing_distributed:
             dist.all_reduce(intersection), dist.all_reduce(union), dist.all_reduce(target)
@@ -297,18 +335,20 @@ def train(train_loader, model, optimizer, epoch):
         batch_time.update(time.time() - end)
         end = time.time()
 
+        ## step.5 调整学习率
         current_iter = epoch * len(train_loader) + i + 1
         current_lr = poly_learning_rate(args.base_lr, current_iter, max_iter, power=args.power)
         for index in range(0, args.index_split):
-            optimizer.param_groups[index]['lr'] = current_lr
+            optimizer.param_groups[index]['lr'] = current_lr# 原backbone学习率调整
         for index in range(args.index_split, len(optimizer.param_groups)):
-            optimizer.param_groups[index]['lr'] = current_lr * 10
+            optimizer.param_groups[index]['lr'] = current_lr * 10# 后面预测网络学习调整
         remain_iter = max_iter - current_iter
         remain_time = remain_iter * batch_time.avg
         t_m, t_s = divmod(remain_time, 60)
         t_h, t_m = divmod(t_m, 60)
-        remain_time = '{:02d}:{:02d}:{:02d}'.format(int(t_h), int(t_m), int(t_s))
+        remain_time = '{:02d}:{:02d}:{:02d}'.format(int(t_h), int(t_m), int(t_s))# 计算剩余时间
 
+        ## step.6 打印日志
         if (i + 1) % args.print_freq == 0 and main_process():
             logger.info('Epoch: [{}/{}][{}/{}] '
                         'Data {data_time.val:.3f} ({data_time.avg:.3f}) '
@@ -344,6 +384,7 @@ def train(train_loader, model, optimizer, epoch):
 def validate(val_loader, model, criterion):
     if main_process():
         logger.info('>>>>>>>>>>>>>>>> Start Evaluation >>>>>>>>>>>>>>>>')
+    ## step.1 设置评价参数,随时更新
     batch_time = AverageMeter()
     data_time = AverageMeter()
     loss_meter = AverageMeter()
@@ -353,6 +394,7 @@ def validate(val_loader, model, criterion):
 
     model.eval()
     end = time.time()
+    ## step.2 epoch内部循环
     for i, (input, target) in enumerate(val_loader):
         data_time.update(time.time() - end)
         input = input.cuda(non_blocking=True)
@@ -372,6 +414,7 @@ def validate(val_loader, model, criterion):
         else:
             loss = torch.mean(loss)
 
+        ## step.4 更新评价数据
         output = output.max(1)[1]
         intersection, union, target = intersectionAndUnionGPU(output, target, args.classes, args.ignore_label)
         if args.multiprocessing_distributed:

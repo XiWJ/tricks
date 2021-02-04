@@ -14,7 +14,7 @@ from util import config
 from util.util import colorize
 
 cv2.ocl.setUseOpenCL(False)
-
+os.chdir("../")
 
 def get_parser():
     parser = argparse.ArgumentParser(description='PyTorch Semantic Segmentation')
@@ -89,8 +89,7 @@ def main():
         from model.psanet import PSANet
         model = PSANet(layers=args.layers, classes=args.classes, zoom_factor=args.zoom_factor, compact=args.compact,
                        shrink_factor=args.shrink_factor, mask_h=args.mask_h, mask_w=args.mask_w,
-                       normalization_factor=args.normalization_factor, psa_softmax=args.psa_softmax,
-                       pretrained=False)
+                       normalization_factor=args.normalization_factor, psa_softmax=args.psa_softmax, pretrained=False)
     logger.info(model)
     model = torch.nn.DataParallel(model).cuda()
     cudnn.benchmark = True

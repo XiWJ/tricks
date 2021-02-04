@@ -1,5 +1,13 @@
 #!/bin/sh
-PARTITION=gpu
+
+## uncomment for slurm
+##SBATCH -p gpu
+##SBATCH --gres=gpu:1
+##SBATCH -c 10
+
+export PYTHONPATH=./
+eval "$(conda shell.bash hook)"
+conda activate pt140  # pytorch 1.4.0 env
 PYTHON=python
 
 dataset=$1
@@ -13,7 +21,6 @@ mkdir -p ${result_dir}
 cp tool/test.sh tool/test.py ${config} ${exp_dir}
 
 export PYTHONPATH=./
-#sbatch -p $PARTITION --gres=gpu:1 -c2 --job-name=test \
-$PYTHON -u tool/test.py \
+$PYTHON -u ${exp_dir}/test.py \
   --config=${config} \
   2>&1 | tee ${result_dir}/test-$now.log
