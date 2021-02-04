@@ -15,6 +15,8 @@ from util import dataset, transform, config
 from util.util import AverageMeter, intersectionAndUnion, check_makedirs, colorize
 
 cv2.ocl.setUseOpenCL(False)
+os.chdir("../")
+print(os.getcwd())
 
 def get_parser():
     parser = argparse.ArgumentParser(description='PyTorch Semantic Segmentation')
