@@ -126,7 +126,7 @@ def main():
     log('=> will save everything to {}'.format(args.save_path))
 ```
 
-## 6. 学习率warmup和调整
+## 7. 学习率warmup和调整
 详见: CascadeStereo
 
 args.lrepochs = "10,12,14,16:2"
@@ -149,4 +149,47 @@ def train():
             loss.backward()
             optimizer.step()
             lr_scheduler.step()
+```
+
+## 8.多线程处理
+详见: semseg
+
+![spawn](semseg/figs/mp_spawn.png)
+```python
+mp.spawn(main_worker, nprocs=args.ngpus_per_node, args=(args.ngpus_per_node, args))
+```
+
+## 9. pytorch自带的syn_bn: torch.nn.SyncBatchNorm
+详见: semseg
+
+```python
+if args.sync_bn:
+    model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
+```
+
+## 10. 分布式+多线程
+详见: semseg
+
+具体要看[代码](semseg/tool/train.py), 比较复杂, 不是一两行代码讲的清楚
+```python
+def main_process():
+    return not args.multiprocessing_distributed or (args.multiprocessing_distributed and args.rank % args.ngpus_per_node == 0)
+
+def main():
+    if main_process():
+        global logger, writer
+        logger = get_logger()
+        writer = SummaryWriter(args.save_path)
+        logger.info(args)
+        logger.info("=> creating model ...")
+        logger.info("Classes: {}".format(args.classes))
+        logger.info(model)
+    if args.distributed:
+        torch.cuda.set_device(gpu)
+        args.batch_size = int(args.batch_size / ngpus_per_node)
+        args.batch_size_val = int(args.batch_size_val / ngpus_per_node)
+        args.workers = int((args.workers + ngpus_per_node - 1) / ngpus_per_node)
+        model = torch.nn.parallel.DistributedDataParallel(model.cuda(), device_ids=[gpu])
+    else:
+        model = torch.nn.DataParallel(model.cuda())
 ```
