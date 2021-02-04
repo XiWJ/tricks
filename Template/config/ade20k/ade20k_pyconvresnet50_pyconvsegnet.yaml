@@ -1,7 +1,7 @@
 DATA:
   data_root: /media/xiweijie/xiwj_drive2/projects/data/ADE20K
   train_list: dataset/ade20k/training.txt
-  val_list: dataset/ade20k/validation_30.txt
+  val_list: dataset/ade20k/validation.txt
   classes: 150
 
 TRAIN:
@@ -50,7 +50,7 @@ Distributed:
   loss_scale:
 
 TEST:
-  test_list: dataset/ade20k/validation.txt
+  test_list: dataset/ade20k/validation_30.txt
   split: val  # split in [train, val and test]
   base_size: 512  # based size for scaling
   test_h: 473
