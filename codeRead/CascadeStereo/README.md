@@ -71,3 +71,48 @@ if (not is_distributed) or (dist.get_rank() == 0):
             "{}/model_{:0>6}.ckpt".format(args.logdir, epoch_idx))
 gc.collect() # 回收内存
 ```
+
+## 6 多线程
+[博客解释１](https://note.qidong.name/2018/11/python-multiprocessing/)
+
+[博客解释２](https://www.cnblogs.com/wxys/p/13756552.html)
+```python
+def filter_depth(pair_folder, scan_folder, out_folder, plyfilename):
+    # the pair file
+    pair_file = os.path.join(pair_folder, "pair.txt")
+    ...
+    
+def init_worker():
+    '''
+    Catch Ctrl+C signal to termiante workers
+    '''
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+def pcd_filter_worker(scan):    # scan就是pcd_filter()的testlist, 是个list
+    if args.testlist != "all":
+        scan_id = int(scan[4:])
+        save_name = 'mvsnet{:0>3}_l3.ply'.format(scan_id)
+    else:
+        save_name = '{}.ply'.format(scan)
+    pair_folder = os.path.join(args.testpath, scan)
+    scan_folder = os.path.join(args.outdir, scan)
+    out_folder = os.path.join(args.outdir, scan)
+    filter_depth(pair_folder, scan_folder, out_folder, os.path.join(args.outdir, save_name))
+
+
+def pcd_filter(testlist, number_worker):
+
+    partial_func = partial(pcd_filter_worker)
+
+    p = Pool(number_worker, init_worker)
+    try:
+        p.map(partial_func, testlist)
+    except KeyboardInterrupt:
+        print("....\nCaught KeyboardInterrupt, terminating workers")
+        p.terminate()
+    else:
+        p.close()
+    p.join()
+
+pcd_filter(testlist, args.num_worker) # args.num_worker==4
+```

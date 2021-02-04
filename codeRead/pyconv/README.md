@@ -2,8 +2,8 @@
 github url
 [link](https://github.com/iduta/pyconvsegnet)
 
-# 2 script log
-## 2.1 get_parser
+# 1 script log
+## 1.1 get_parser
 [yaml文件](./config/ade20k/ade20k_pyconvresnet50_pyconvsegnet.yaml)
 ```python
 def get_parser():
@@ -24,7 +24,7 @@ def main():
     gray_folder = os.path.join(args.save_folder, 'gray')
 ```
 
-## 2.2 get_logger
+## 1.2 get_logger
 [使用解释](https://www.cnblogs.com/xianyulouie/p/11041777.html)
 ```python
 def get_logger():
@@ -46,8 +46,8 @@ def main():
     ···
 ```
 
-## 2.3 魔改ResNet
-### 2.3.1 conv & conv1x1
+## 1.3 魔改ResNet
+### 1.3.1 conv & conv1x1
 不解释直接看代码，后面要用的
 ```python
 def conv(in_planes, out_planes, kernel_size=3, stride=1, padding=1, dilation=1, groups=1):
@@ -61,7 +61,7 @@ def conv1x1(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 ```
 
-### 2.3.2 build backbone_layers from ResNet
+### 1.3.2 build backbone_layers from ResNet
 [build_backbone_layers](./model/build_backbone_layers.py)
 
 其实是为了得到layer1, layer2, layer3, layer4
@@ -179,7 +179,7 @@ class PyConvSegNet(nn.Module):
             return x
 ```
 
-### 2.3.3 pyconvresnet50
+### 1.3.3 pyconvresnet50
 [pyconvresnet50](./model/backbones/pyconvresnet.py) line 277
 ```python
 def pyconvresnet50(pretrained=False, **kwargs):
@@ -211,7 +211,7 @@ def resnet50(pretrained=False, **kwargs):
     return model
 ```
 
-### 2.3.4 PyConvResNet
+### 1.3.4 PyConvResNet
 [PyConvResNet](./model/backbones/pyconvresnet.py) line 182  -- 对应于ResNet的Class ResNet(nn.Module)
 ```python
 class PyConvResNet(nn.Module):
@@ -321,7 +321,7 @@ class PyConvResNet(nn.Module):
         return x
 ```
 
-### 2.3.5 PyConvBlock
+### 1.3.5 PyConvBlock
 [PyConvBlock](./model/backbones/pyconvresnet.py) line 140  -- 对应于 class Bottleneck(nn.Module):
 ```python
 class PyConvBlock(nn.Module):
@@ -367,7 +367,7 @@ class PyConvBlock(nn.Module):
         return out
 ```
 
-### 2.3.6 get_pyconv & PyConv4
+### 1.3.6 get_pyconv & PyConv4
 ![PyConvBlock](./figs/pyconvBlock.PNG)
 ```python
 class PyConv3(nn.Module):
@@ -413,7 +413,7 @@ def get_pyconv(inplans, planes, pyconv_kernels, stride=1, pyconv_groups=[1]):
         return PyConv4(inplans, planes, pyconv_kernels=pyconv_kernels, stride=stride, pyconv_groups=pyconv_groups)
 ```
 
-## 2.4 PyConvHead
+## 1.4 PyConvHead
 PyConvHead 用于图像**分割**
 ![PyConvHead](./figs/PyConvHead.png)
 
@@ -495,14 +495,14 @@ class PyConvHead(nn.Module):
         return x
 ```
 
-## 2.5 cv2.copyMakeBorder
+## 1.5 cv2.copyMakeBorder
 [博客解释](https://blog.csdn.net/qq_36560894/article/details/105416273)
 
 ```python
 image = cv2.copyMakeBorder(image, pad_h_half, pad_h - pad_h_half, pad_w_half, pad_w - pad_w_half, cv2.BORDER_CONSTANT, value=mean)
 ```
 
-## 2.6 test.sh
+## 1.6 test.sh
 [test.sh](tool/test.sh)
 ```dockerfile
 #!/bin/sh
@@ -529,4 +529,10 @@ $PYTHON -u tool/test.py \
 **使用**
 ```dockerfile
 ./tool/test.sh ade20k pyconvresnet50_pyconvsegnet
+```
+
+## 1.7 多线程处理
+![spawn](figs/mp_spawn.png)
+```python
+mp.spawn(main_worker, nprocs=args.ngpus_per_node, args=(args.ngpus_per_node, args))
 ```
