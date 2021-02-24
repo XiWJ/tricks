@@ -203,6 +203,9 @@ probability = F.softmax(cost, dim=1)    # (B, 192, H, W) softmax along D=192 dim
 ```
 
 disp_sample is d
+
+![](figs/disp_sample.png)
+
 ```python
 self.disp_sample_number = (self.max_disp + self.dilation - 1) // self.dilation
 
