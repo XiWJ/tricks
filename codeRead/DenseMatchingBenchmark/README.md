@@ -1,9 +1,13 @@
 # DenseMatchingBenchmark
+![](figs/pipeline.png)
+
 ## acknowledge
 [link](https://github.com/DeepMotionAIResearch/DenseMatchingBenchmark)
 
-## 1. Spatial Pyramid Pooling Module
+## 1. backbone
+PSMNet
 ![](figs/PSMNet.png)
+### 1.1 Spatial pyramid pooling module
 ![](figs/SPP.png)
 
 [codeLink](https://github.com/DeepMotionAIResearch/DenseMatchingBenchmark/blob/177c56ca1952f54d28e6073afa2c16981113a2af/dmb/modeling/stereo/backbones/PSMNet.py#L83)
@@ -57,7 +61,8 @@
         return l_fms, r_fms
 ```
 
-## 2. Stacked hourglass
+### 1.2 Stacked hourglass
+![](figs/PSMNet.png)
 ![](figs/stacked_hourglass.png)
 
 ```python
@@ -88,3 +93,164 @@
         return out, pre, post
 ```
 ![](figs/out1.png)
+
+### 1.3 cost volume
+cost computation
+
+**Concatenation**
+```python
+def cat_fms(reference_fm, target_fm, max_disp=192, start_disp=0, dilation=1, disp_sample=None):
+    """
+    Concat left and right in Channel dimension to form the raw cost volume.
+    Args:
+        max_disp, (int): under the scale of feature used,
+            often equals to (end disp - start disp + 1), the maximum searching range of disparity
+        start_disp (int): the start searching disparity index, usually be 0
+            dilation (int): the step between near disparity index
+        dilation (int): the step between near disparity index
+
+    Inputs:
+        reference_fm, (Tensor): reference feature, i.e. left image feature, in [BatchSize, Channel, Height, Width] layout
+        target_fm, (Tensor): target feature, i.e. right image feature, in [BatchSize, Channel, Height, Width] layout
+
+    Output:
+        concat_fm, (Tensor): the formed cost volume, in [BatchSize, Channel*2, disp_sample_number, Height, Width] layout
+
+    """
+    device = reference_fm.device
+    N, C, H, W = reference_fm.shape
+
+    end_disp = start_disp + max_disp - 1
+    disp_sample_number = (max_disp + dilation - 1) // dilation
+    disp_index = torch.linspace(start_disp, end_disp, disp_sample_number)   # torch.arange(48) [0., 1., 2., ..., 47.]
+
+    concat_fm = torch.zeros(N, C * 2, disp_sample_number, H, W).to(device)  # (B, 2C, 48, h, w) -- h = H/4, w = W/4
+    idx = 0
+    for i in disp_index:
+        i = int(i) # convert torch.Tensor to int, so that it can be index
+        if i > 0:
+            concat_fm[:, :C, idx, :, i:] = reference_fm[:, :, :, i:]
+            concat_fm[:, C:, idx, :, i:] = target_fm[:, :, :, :-i]
+        elif i == 0:
+            concat_fm[:, :C, idx, :, :] = reference_fm  # Concatenation along channel dimension
+            concat_fm[:, C:, idx, :, :] = target_fm     # (B, 2C, 48, h, w) = Concat[(B, C, 48, h, w), (B, C, 48, h, w)]
+        else:
+            concat_fm[:, :C, idx, :, :i] = reference_fm[:, :, :, :i]
+            concat_fm[:, C:, idx, :, :i] = target_fm[:, :, :, abs(i):]
+        idx = idx + 1
+
+    concat_fm = concat_fm.contiguous()
+    return concat_fm
+
+def forward(self, ref_fms, tgt_fms, disp_sample=None):
+    # 1. build raw cost by concat
+    cat_cost = self.cat_func(ref_fms, tgt_fms, disp_sample=disp_sample, **self.default_args)    # (B, 2C=64, 48, H/4, W/4)
+
+    # 2. aggregate cost by 3D-hourglass
+    costs = self.aggregator(cat_cost)   # [(B, 192, H, W), (B, 192, H, W), (B, 192, H, W)]
+
+    return costs
+```
+
+cost aggregation
+
+```python
+def forward(self, raw_cost):
+    B, C, D, H, W = raw_cost.shape  # (B, 2C, 48, h, w) -- C = 32, h = H/4, w = W/4
+    # concat_fms: (BatchSize, Channels*2, MaxDisparity/4, Height/4, Width/4)
+    cost0 = self.dres0(raw_cost)    # (B, 2C, 48, h, w) => (B, C, 48, h, w)
+    cost0 = self.dres1(cost0) + cost0   # (B, C, 48, h, w)
+    
+    out1, pre1, post1 = self.dres2(cost0, None, None)   # (B, C, 48, h, w), (B, 2C, 24, h/2, w/2), (B, 2C, 24, h/2, w/2)
+    out1 = out1 + cost0
+    
+    out2, pre2, post2 = self.dres3(out1, pre1, post1)   # (B, C, 48, h, w), (B, 2C, 24, h/2, w/2), (B, 2C, 24, h/2, w/2)
+    out2 = out2 + cost0
+    
+    out3, pre3, post3 = self.dres4(out2, pre2, post2)   # (B, C, 48, h, w), (B, 2C, 24, h/2, w/2), (B, 2C, 24, h/2, w/2)
+    out3 = out3 + cost0
+    
+    cost1 = self.classif1(out1)                         # (B, C, 48, h, w) => (B, 1, 48, h, w)
+    cost2 = self.classif2(out2) + cost1                 # [(B, C, 48, h, w) + (B, 1, 48, h, w)] => (B, 1, 48, h, w)
+    cost3 = self.classif3(out3) + cost2                 # [(B, C, 48, h, w) + (B, 1, 48, h, w)] => (B, 1, 48, h, w)
+    
+    # (BatchSize, 1, MaxDisparity, Height, Width)
+    full_h, full_w = H * 4, W * 4
+    
+    cost1 = self.deconv1(cost1, [self.max_disp, full_h, full_w])    # (B, 1, 48, H/4, W/4) => (B, 1, 192, H, W)
+    cost2 = self.deconv2(cost2, [self.max_disp, full_h, full_w])    # (B, 1, 192, H, W) => (B, 1, 192, H, W)
+    cost3 = self.deconv3(cost3, [self.max_disp, full_h, full_w])    # (B, 1, 192, H, W) => (B, 1, 192, H, W)
+    
+    # (BatchSize, MaxDisparity, Height, Width)
+    cost1 = torch.squeeze(cost1, 1) # (B, 1, 192, H, W) => (B, 192, H, W)
+    cost2 = torch.squeeze(cost2, 1) # (B, 1, 192, H, W) => (B, 192, H, W)
+    cost3 = torch.squeeze(cost3, 1) # (B, 1, 192, H, W) => (B, 192, H, W)
+    
+    return [cost3, cost2, cost1]
+```
+
+### 1.4 disparity regression
+```python
+    # compute disparity index: (1 ,1, disp_sample_number, 1, 1)
+    disp_sample = torch.linspace(
+        self.start_disp, self.end_disp, self.disp_sample_number
+    )   # torch.arange(192) [0., 1., 2., 3., ..., 191.]
+    disp_sample = disp_sample.repeat(1, 1, 1, 1, 1).permute(0, 1, 4, 2, 3).contiguous() # (1, 1, 192, 1, 1)
+    self.disp_regression = nn.Conv3d(1, 1, (self.disp_sample_number, 1, 1), 1, 0, bias=False)
+    
+    def forward(self, cost_volume, disp_sample=None):
+
+        # note, cost volume direct represent similarity
+        # 'c' or '-c' do not affect the performance because feature-based cost volume provided flexibility.
+
+        if cost_volume.dim() != 4:
+            raise ValueError('expected 4D input (got {}D input)'
+                             .format(cost_volume.dim()))
+
+        # scale cost volume with alpha
+        cost_volume = cost_volume * self.alpha  # (B, 192, H, W) * alpha
+
+        if self.normalize:
+            prob_volume = F.softmax(cost_volume, dim=1) # (B, 192, H, W) softmax along dim=1 (D=192)
+        else:
+            prob_volume = cost_volume
+
+        # [B, disp_sample_number, W, H] -> [B, 1, disp_sample_number, W, H]
+        prob_volume = prob_volume.unsqueeze(1)  # (B, 192, H, W) => # (B, 1, 192, H, W)
+
+        disp_map = self.disp_regression(prob_volume)    # (B, 1, 192, H, W) => (B, 1, 1, H, W)
+        # [B, 1, 1, W, H] -> [B, 1, W, H]
+        disp_map = disp_map.squeeze(1)  # (B, 1, 1, H, W) => (B, 1, H, W)
+
+        return disp_map
+```
+
+## 2. Confidence estimation
+![](figs/confidence.png)
+### 2.1 confidence generatation
+<img src="http://chart.googleapis.com/chart?cht=tx&chl=\Large x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}" style="border:none;">
+
+```python
+    def get_confidence(self, costs):
+        assert len(self.conf_heads) == len(costs), "NUM of confidence heads({}) must be equal to NUM" \
+                                                   "of cost volumes({})".format(len(self.conf_heads), len(costs))
+
+        # for convenience to use log sigmoid when calculate loss,
+        # we don't directly confidence cost to confidence by sigmoid
+        conf_costs = [conf_head(cost) for cost, conf_head in zip(costs, self.conf_heads)]   # (B, 192, H, W) -> (B, 1, H, W)
+        # convert to confidence
+        confs = [torch.sigmoid(conf_cost) for conf_cost in conf_costs]  # sigmod([(B, 1, H, W), (B, 1, H, W), (B, 1, H, W)]) => range(0., 1.)
+        # calculate variance modulated by confidence
+        cost_vars = [self.alpha * (1 - conf) + self.beta for conf in confs] # alpha * (1-cost) + beta
+
+        return confs, cost_vars, conf_costs
+
+    def forward(self, costs, target=None):
+        confs, cost_vars, conf_costs = self.get_confidence(costs)
+
+        if self.training:
+            cm_losses = self.get_loss(conf_costs, target)   # conf_cost (B, 1, H, W), target (B, 1, H, W)
+            return cost_vars, cm_losses
+        else:
+            return cost_vars, confs
+```
