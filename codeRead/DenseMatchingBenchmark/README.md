@@ -227,3 +227,14 @@ valid_pixel_number = mask.float().sum()estLogProb = F.log_softmax(estCost, dim=1
 weight = (1.0 - scaled_gtProb).pow(-self.focal_coefficient).type_as(scaled_gtProb)  # (1 - P_p(d)) ^ {-alpha}   # (B, 192, H, W)
 loss = -((scaled_gtProb * estLogProb) * weight * mask.float()).sum() / valid_pixel_number   # focal loss Equ. 6
 ```
+
+![](figs/weights.png)
+
+![](figs/weight.png)
+
+pay more **attention** to positive disparity
+
+![](figs/cross_entropy.png)
+![](figs/cross_entropy_gt.png)
+![](figs/cross_entropy_1-gt.png)
+![](figs/final_loss.png)
