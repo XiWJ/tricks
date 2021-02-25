@@ -228,7 +228,7 @@ weight = (1.0 - scaled_gtProb).pow(-self.focal_coefficient).type_as(scaled_gtPro
 loss = -((scaled_gtProb * estLogProb) * weight * mask.float()).sum() / valid_pixel_number   # focal loss Equ. 6
 ```
 
-![](figs/weights.png)
+![](figs/weights.gif)
 
 ![](figs/weight.png)
 
