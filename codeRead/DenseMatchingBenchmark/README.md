@@ -198,6 +198,7 @@ step.1 compute P(d)
 ![](figs/P(d).gif)
 
 ```python
+# gtDisp (B, 1, H, W)
 cost = ((-torch.abs(self.disp_sample - self.gtDisp)) / self.variance)   # |d - d^{gt}| / sigma
 probability = F.softmax(cost, dim=1)    # (B, 192, H, W) softmax along D=192 dim
 ```
