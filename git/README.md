@@ -94,6 +94,14 @@
 - **pull request**<br>
   参考文章：[GitHub Pull Request入门](https://zhuanlan.zhihu.com/p/51199833)
 
+- **git rebase**<br>
+  参考文章: [详解git rebase，让你走上git大神之路](https://z.itpub.net/article/detail/8EE7F1EA518B25CB7466CFAAA1614F8A)<br>
+  rebase的功能说白了可以提取我们在A分支上的改动，然后应用在B分支的代码上<br>
+  ```bash
+  git checkout bugFix # 切到bugFix分支
+  git rebase master # 将bug修复后的分支接到master经过进一步开发后的分支后
+  ```
+
 ## 3. 命令行控制
 - 将项目的所有文件添加到仓库中
 ```bash
