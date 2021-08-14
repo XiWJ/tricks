@@ -126,7 +126,7 @@ git push -u origin master
 [GitHub Desktop for Linux](https://github.com/shiftkey/desktop)
 
 - **SourceTree** for Mac<br>
-  Mac OS下使用SourceTree管理git．<br>
+  Mac OS下使用SourceTree管理git, 方便多人共同维护一个repository．．<br>
   [SourceTree官网](https://www.sourcetreeapp.com/)
 
 ## 5. Q&A
