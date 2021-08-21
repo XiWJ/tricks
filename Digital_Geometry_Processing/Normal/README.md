@@ -3,7 +3,7 @@
 - per-faces-normal也就是triangle每个面上的normal, 是constant的<br>
 ![](pics/per-face.jpeg)
 - 计算公式:<br>
-<img src="http://latex.codecogs.com/gif.latex?\mathbf{n} = e_1 \times e_2 = (v_1 - v_2\times (v_1 - v_3))" />
+<img src="http://latex.codecogs.com/gif.latex?\mathbf{n} = e_1 \times e_2 = (v_1 - v_2) \times (v_1 - v_3))" />
 
 - C++ code
 ```c++
