@@ -2,11 +2,11 @@
 ## 1. using coordinates
 - 计算公式:<br>
 	- [Using_coordinates](https://en.wikipedia.org/wiki/Triangle#Using_coordinates)<br>
-	
-	  ![](pics/Using_coordinates.png)
-	
+
+		![](pics/Using_coordinates.png)
+
 - C++ code<br>
-	
+
 	```c++
 	void doublearea(const Eigen::MatrixXd & V,
 		            const Eigen::MatrixXi & F,
@@ -31,18 +31,18 @@
 		    }
   	}
   ```
-  
-  
+
+
 
 ## 2. Using Heron's formula
 
 - 计算公式:<br>
 	- [Using Heron's formula](https://en.wikipedia.org/wiki/Triangle#Using_Heron's_formula)<br>
-	
+
 	  ![](pics/Using_Heron's_formula.png)
-	
+
 - C++ code<br>
-	
+
 	```c++
 	void doublearea2(const Eigen::MatrixXd & V,
 	                 const Eigen::MatrixXi & F,
@@ -53,17 +53,17 @@
 	        Eigen::Vector3d v1 = V.row(F(i, 0));
 	        Eigen::Vector3d v2 = V.row(F(i, 1));
 	        Eigen::Vector3d v3 = V.row(F(i, 2));
-  
+
 	        /// 三条边
 	        Eigen::Vector3d e1 = v1 - v2;
 	        Eigen::Vector3d e2 = v2 - v3;
 	        Eigen::Vector3d e3 = v3 - v1;
-  
+
 	        /// 三条边的边长
 	        double l1 = e1.norm();
 	        double l2 = e2.norm();
 	        double l3 = e3.norm();
-  
+
 	        /// Using Heron's formula
 	        /// https://en.wikipedia.org/wiki/Triangle#Using_Heron's_formula
 	        double s = 0.5 * (l1 + l2 + l3);
@@ -78,10 +78,10 @@
 
 - 计算公式:<br>
 	- [Using vectors](https://en.wikipedia.org/wiki/Triangle#Using_vectors)<br>
-	
+
 	  ![](pics/Using_vectors.png)
 - C++ code<br>
-	
+
 	```c++
 	void doublearea3(const Eigen::MatrixXd & V,
 					const Eigen::MatrixXi & F,
@@ -92,14 +92,14 @@
 	        Eigen::Vector3d v1 = V.row(F(i, 0));
 	        Eigen::Vector3d v2 = V.row(F(i, 1));
 	        Eigen::Vector3d v3 = V.row(F(i, 2));
-  
+
 	        /// 两条边
 	        Eigen::Vector3d e1 = v1 - v2;
 	        Eigen::Vector3d e2 = v2 - v3;
-  
+
 	        /// 叉乘获得的n是未经过归一化的normal
 	        Eigen::Vector3d n = e1.cross(e2);
-  
+
 	        /// 面积Area = 0.5 * det(n)
 	        /// https://en.wikipedia.org/wiki/Triangle#Using_vectors
 	        double a = n.norm();
@@ -107,4 +107,3 @@
 	    }
 	}
   ```
-
