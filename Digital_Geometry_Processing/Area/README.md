@@ -3,7 +3,7 @@
 - 计算公式:<br>
 	- [Using_coordinates](https://en.wikipedia.org/wiki/Triangle#Using_coordinates)<br>
 		![](pics/Using_coordinates.png)<br>
-- C++ code
+- C++ code<br>
 		```C++
 		void doublearea(const Eigen::MatrixXd & V,
 		            const Eigen::MatrixXi & F,
@@ -33,7 +33,7 @@
 - 计算公式:<br>
 	- [Using Heron's formula](https://en.wikipedia.org/wiki/Triangle#Using_Heron's_formula)<br>
 		![](pics/Using_Heron's_formula.png)<br>
-- C++ code
+- C++ code<br>
 		```C++
 		void doublearea2(const Eigen::MatrixXd & V,
 		             const Eigen::MatrixXi & F,
@@ -68,7 +68,7 @@
 - 计算公式:<br>
 	- [Using vectors](https://en.wikipedia.org/wiki/Triangle#Using_vectors)<br>
 		![](pics/Using_vectors.png)<br>
-- C++ code
+- C++ code<br>
 		```C++
 		void doublearea3(const Eigen::MatrixXd & V,
 		                 const Eigen::MatrixXi & F,

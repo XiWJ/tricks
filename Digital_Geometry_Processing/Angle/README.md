@@ -5,7 +5,7 @@
 		![](pics/220px-Triangle_with_notations_2.svg.png)<br>
 		![](pics/cosine_rule.png)<br>
 		![](pics/angle_calculate.png)<br>
-- C++ code
+- C++ code<br>
 		```c++
 		void internal_angles(const Eigen::MatrixXd & V,
 		                     const Eigen::MatrixXi & F,
