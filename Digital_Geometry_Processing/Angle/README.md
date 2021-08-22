@@ -39,3 +39,4 @@ void internal_angles(const Eigen::MatrixXd & V,
     }
 }
     ```
+**NOTE:** `internal_angles`函数返回的是角度, 角度-弧度转换公式见[弧度](https://zh.wikipedia.org/wiki/%E5%BC%A7%E5%BA%A6)
