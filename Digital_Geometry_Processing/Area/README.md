@@ -2,7 +2,7 @@
 ## 1. using coordinates
 - 计算公式:<br>
 	- [Using_coordinates](https://en.wikipedia.org/wiki/Triangle#Using_coordinates)<br>
-		![](pics/Using_coordinates.png)<br>
+		![](pics/Using_coordinates.png)
 	
 - C++ code<br>
 	
