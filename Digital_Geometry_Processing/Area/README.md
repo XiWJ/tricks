@@ -2,7 +2,8 @@
 ## 1. using coordinates
 - 计算公式:<br>
 	- [Using_coordinates](https://en.wikipedia.org/wiki/Triangle#Using_coordinates)<br>
-		![](pics/Using_coordinates.png)<br>
+	
+	  ![](pics/Using_coordinates.png)
 	
 - C++ code<br>
 	
@@ -37,7 +38,8 @@
 
 - 计算公式:<br>
 	- [Using Heron's formula](https://en.wikipedia.org/wiki/Triangle#Using_Heron's_formula)<br>
-		![](pics/Using_Heron's_formula.png)<br>
+	
+	  ![](pics/Using_Heron's_formula.png)
 	
 - C++ code<br>
 	
@@ -76,7 +78,8 @@
 
 - 计算公式:<br>
 	- [Using vectors](https://en.wikipedia.org/wiki/Triangle#Using_vectors)<br>
-		![](pics/Using_vectors.png)<br>
+	
+	  ![](pics/Using_vectors.png)
 - C++ code<br>
 	
 	```c++
