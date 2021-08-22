@@ -1,5 +1,5 @@
-# triangle normal computation
-## 1. per faces normal
+# Triangle Tormal Computation
+## 1. Per faces normal
 - per-faces-normal也就是triangle每个面上的normal, 是constant的<br>
 ![](pics/per-face.jpeg)
 - 计算公式:<br>
@@ -23,7 +23,7 @@ void per_face_normal(const Eigen::MatrixXd & V,
 }
 ```
 
-## 2. per vertex normal
+## 2. Per vertex normal
 - per-vertex-normal是各个vertex上的normal, 也就是将vertex v_i所在面$F(k)$上的normal(上一步per-faces-normal) $n_k$加权加权平均赋给其vertex. 加权的weight采用triangle的面积.
 ![](pics/per-vertex.png)
 - 计算公式<br>
