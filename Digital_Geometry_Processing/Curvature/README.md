@@ -3,6 +3,7 @@
 
 - [主曲率](https://zh.wikipedia.org/wiki/%E4%B8%BB%E6%9B%B2%E7%8E%87)
 - 维基百科定义: 在曲面上取一点E，曲面在E点的法线为z轴，过z轴可以有无限多个剖切平面，每个剖切平面与曲面相交，其交线为一条平面曲线，每条平面曲线在E点有一个曲率半径。不同的剖切平面上的平面曲线在E点的曲率半径一般是不相等的。这些曲率半径中，有一个最大和最小的曲率半径，称之为主曲率半径，记作 *k*1 与 *k*2，这两个曲率半径所在的方向，数学上可以证明是相互垂直的。
+- 曲线的曲率由定义是[密切圆](https://zh.wikipedia.org/w/index.php?title=密切圆&action=edit&redlink=1)[半径](https://zh.wikipedia.org/wiki/半径)的[倒数](https://zh.wikipedia.org/wiki/倒数)。当曲线转向与平面给定法向量相同方向时，曲率取正值，否则取负值。
 - ![](pics/300px-Minimal_surface_curvature_planes-en.svg.png)
 
 ## 2. Gaussian Curvature
