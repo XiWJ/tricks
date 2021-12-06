@@ -51,6 +51,26 @@ Eigen::Matrix4f get_model_matrix(float rotation_angle)
     return model;
 }
 
+Eigen::Matrix4f get_rotation(Vector3f axis, float angle)
+{
+    Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+
+    // TODO: Rotation around any axis by angle
+
+    float alpha = angle / 180 * MY_PI; // aplha from angle to π
+
+    Eigen::Matrix3f N, R;
+    N << 0.0f,   - axis.z(),   axis.y(),
+         axis.z(),     0.0f, - axis.x(),
+       - axis.y(), axis.x(),       0.0f;
+
+    R << cos(alpha) * Eigen::Matrix3f::Identity() + (1 - cos(alpha)) * axis * axis.transpose() + sin(alpha) * N;
+
+    model.block(0, 0, 3, 3) << R;
+
+    return model;
+}
+
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                                       float zNear, float zFar)
 {

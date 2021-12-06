@@ -60,7 +60,8 @@
     }
     ```
   
-    
+
+
 
 ## get_projection_matrix
 
@@ -124,6 +125,40 @@
   }
   ```
 
+
+
+
+## get_rotation
+
+- **目标**: 构造一个函数，该函数的作用是得到绕任意过原点的轴的旋转变换矩阵
+
+- 罗德里格公式：
+
+- C++ code
+
+  ```c++
+  Eigen::Matrix4f get_rotation(Vector3f axis, float angle)
+  {
+      Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+  
+      // TODO: Rotation around any axis by angle
+  
+      float alpha = angle / 180 * MY_PI; // aplha from angle to π
+  
+      Eigen::Matrix3f N, R;
+      N << 0.0f,   - axis.z(),   axis.y(),
+           axis.z(),     0.0f, - axis.x(),
+         - axis.y(), axis.x(),       0.0f;
+  
+      R << cos(alpha) * Eigen::Matrix3f::Identity() + (1 - cos(alpha)) * axis * axis.transpose() + sin(alpha) * N;
+  
+      model.block(0, 0, 3, 3) << R;
+  
+      return model;
+  }
+  ```
+
+  
 
 
 
