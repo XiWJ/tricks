@@ -132,7 +132,7 @@
         Eigen::Vector3f point = payload.view_pos;
         Eigen::Vector3f normal = payload.normal;
 
-        Eigen::Vector3f result_color = {0, 0, 0};`
+        Eigen::Vector3f result_color = {0, 0, 0};
 
         for (auto& light : lights)
         {
@@ -153,6 +153,19 @@
 
         return result_color * 255.f;
    }
+  ```
+  **注意**：u和v要clamp到[0, 1]区间，因此getColor函数需要加个限定
+  ```c++
+  Eigen::Vector3f getColor(float u, float v)
+  {
+    u = std::min(1.0f, std::max(0.0f, u));
+    v = std::min(1.0f, std::max(0.0f, v));
+
+    auto u_img = u * width;
+    auto v_img = (1 - v) * height;
+    auto color = image_data.at<cv::Vec3b>(v_img, u_img);
+    return Eigen::Vector3f(color[0], color[1], color[2]);
+  }
   ```
 
 ## rasterization
