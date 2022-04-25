@@ -13,13 +13,14 @@ set(LIB_PATH ${PROJECT_SOURCE_DIR}/lib)
 file(GLOB_RECURSE LIB_FILES ${LIB_PATH}/*.lib)
 link_directories(${LIB_PATH})
 
-# message("*** LIB_PATH: ${LIB_PATH}")
-# message("*** LIB_FILES: ${LIB_FILES}")
+message("*** LIB_PATH: ${LIB_PATH}")
+message("*** LIB_FILES: ${LIB_FILES}")
 
 # src
 aux_source_directory(${PROJECT_SOURCE_DIR}/src DIR_SRCS)
 
 # sub dir
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/01_Hello_Window)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/02_Hello_Triangle)
 
 # exe
