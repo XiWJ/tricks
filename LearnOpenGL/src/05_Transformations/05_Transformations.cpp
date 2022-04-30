@@ -80,14 +80,40 @@ int main()
     };
 
     // 生成 VAO VBO
-    unsigned int VBO, VAO, EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
+    unsigned int VBOs[2], VAOs[2], EBO;
+    glGenVertexArrays(1, VAOs);
+    glGenBuffers(1, VBOs);
     glGenBuffers(1, &EBO);
     // 绑定 VAO
-    glBindVertexArray(VAO);
+    glBindVertexArray(VAOs[0]);
     // 绑定 VBO & 复制数据到 VBO
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[0]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // 指定顶点属性
+    // 1. pos
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // 2. color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    // 3. UV texcroods
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    // 绑定EBO, 同时拷贝数据到GL_ELEMENT_ARRAY_BUFFER
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // 解绑VBO
+    glBindBuffer(GL_ARRAY_BUFFER, 0); 
+    // 解绑VAO
+    glBindVertexArray(0);
+
+    // 绑定 VAO
+    glBindVertexArray(VAOs[1]);
+    // 绑定 VBO & 复制数据到 VBO
+    glBindBuffer(GL_ARRAY_BUFFER, VBOs[1]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // 指定顶点属性
@@ -189,6 +215,7 @@ int main()
         float timeValue = glfwGetTime();
         float movingValue = sin(timeValue) + 1.0f;
         float rotateValue = (sin(timeValue) / 2.0f) + 0.5f;
+        float scaleValue = (sin(timeValue) / 2.0f) + 0.5f;
 
         // render
         // ------
@@ -219,7 +246,17 @@ int main()
         unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform"); // 首先查询uniform变量的地址
         glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
-        glBindVertexArray(VAO);
+        glBindVertexArray(VAOs[0]);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        trans = glm::mat4(1.0f);
+        trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
+        trans = glm::scale(trans, glm::vec3(scaleValue, scaleValue, scaleValue));
+        // 给 shader 传递 uniform 变量值
+        ourShader.setFloat("coeff", 1.0f - mixValue);
+        transformLoc = glGetUniformLocation(ourShader.ID, "transform"); // 首先查询uniform变量的地址
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+        glBindVertexArray(VAOs[1]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -229,8 +266,8 @@ int main()
     }
 
     // 删除VAO, VBO, EBO
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, VAOs);
+    glDeleteBuffers(1, VBOs);
     glDeleteBuffers(1, &EBO);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
