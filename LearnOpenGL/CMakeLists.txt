@@ -23,6 +23,7 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/src DIR_SRCS)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/01_Hello_Window)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/02_Hello_Triangle)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/03_Shaders)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/04_Textures)
 
 # exe
 # add_executable(Test ${DIR_SRCS})
