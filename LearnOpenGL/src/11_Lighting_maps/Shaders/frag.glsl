@@ -25,7 +25,6 @@ in vec2 TexCoords; // UV
 void main()
 {
     // 环境光
-    float ambientStrength = 0.1f;
     vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords));
 
     // 漫反射
@@ -35,7 +34,6 @@ void main()
     vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
 
     // 镜面反射
-    float specularStrength = 0.5;
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 halfVec = normalize(viewDir + lightDir);
     float spec = pow(max(dot(halfVec, norm), 0.0), material.shininess);
