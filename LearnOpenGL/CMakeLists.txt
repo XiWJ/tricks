@@ -30,6 +30,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/07_Camera)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/08_Colors)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/09_Basic_Lighting)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/10_Materials)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/11_Lighting_maps)
 
 # exe
 # add_executable(Test ${DIR_SRCS})
