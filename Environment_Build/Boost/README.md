@@ -193,7 +193,7 @@ xcopy %boost_dir%\boost\* .\local\include\boost\ /s /y /q
 
 ### 2.3 Run
 
-    - in python test code [PyBoostTest](./code/PyBoostTest/PyBoostTest.py)
+- in python test code [PyBoostTest](./code/PyBoostTest/PyBoostTest.py)
 
     ```Python
     import PyBoostTest
@@ -216,7 +216,7 @@ xcopy %boost_dir%\boost\* .\local\include\boost\ /s /y /q
         test_pyBoost()
     ```
 
-    - result
+- result
     ```Bash
     hello, world
     2.5
