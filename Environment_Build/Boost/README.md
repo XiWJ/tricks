@@ -51,9 +51,9 @@ xcopy %boost_dir%\boost\* .\local\include\boost\ /s /y /q
 ```
 
 ## 2. Using PyBoost
-- Visual Studio Setup
+### 2.1.a Visual Studio Setup
 
-    - include
+- include
 
     `项目` -> `属性` -> `VC++目录` -> `包含目录`
 
@@ -61,7 +61,7 @@ xcopy %boost_dir%\boost\* .\local\include\boost\ /s /y /q
 
     ![](./pics/vs1.png) 
 
-    - lib
+- lib
 
     `项目` -> `属性` -> `VC++目录` -> `库目录`
 
@@ -69,7 +69,7 @@ xcopy %boost_dir%\boost\* .\local\include\boost\ /s /y /q
 
     ![](./pics/vs2.png)
 
-    - 输出设置
+- 输出设置
 
     `项目` -> `属性` -> `常规` -> `配置类型` & `目标文件扩展名`
 
@@ -79,11 +79,66 @@ xcopy %boost_dir%\boost\* .\local\include\boost\ /s /y /q
 
     Visual Studio Setup 可以参考[Windows 安装 Boost Python 并使用 Visual Studio 2019 或 Clion 编译 (Python调用C++) ](https://blog.forgiveher.cn/posts/1574671900/)
 
-    - build .pyd
+- build .pyd
 
     在Visual Studio中，Relase x64模式，`生成` -> `生成解决方案`。在\x64\Release\下获取`PyBoostTest.pyd`
 
-- Code
+### 2.1.a CMake Setup
+
+    除了使用Visual Studio外，也可以使用CMake工具帮助build
+
+- CMakeLists.txt
+
+    ```CMake
+    cmake_minimum_required(VERSION 3.21)
+    project(PyBoostTest)
+
+    # C++ 17
+    set(CMAKE_CXX_STANDARD 17)
+
+    # include
+    set(INCLUDE_H ${PROJECT_SOURCE_DIR}/inc)
+    set(INCLUDE_ADD "path\to\boost\include" 
+                    "path\to\python\include")
+    include_directories(${INCLUDE_H} ${INCLUDE_ADD})
+
+    # lib
+    set(LIB_PATH ${PROJECT_SOURCE_DIR}/lib)
+    set(LIB_ADD "path\to\boost\libs" 
+                "path\to\python\lib")
+    file(GLOB_RECURSE LIB_FILES ${LIB_PATH}/*.lib ${LIB_add}/*.lib)
+    link_directories(${LIB_PATH} ${LIB_ADD})
+
+    message("*** LIB_PATH: ${LIB_PATH}")
+    message("*** LIB_FILES: ${LIB_FILES}")
+
+    # src
+    aux_source_directory(${PROJECT_SOURCE_DIR}/src DIR_SRCS)
+
+    # pyd
+    add_library(PyBoostTest ${DIR_SRCS})
+    target_link_libraries(PyBoostTest ${LIB_FILES})
+
+    # suffix
+    set (EXT ".so")
+    if (WIN32)
+        set (EXT ".pyd")
+    endif()
+    set_target_properties(PyBoostTest PROPERTIES PREFIX "" SUFFIX ${EXT})
+    ```
+
+- CMake --build
+
+    ```CMake
+    mkdir build
+    cd build
+    cmake "Visual Studio 15 2022" -A x64 ..
+    cmake --build . --config Release -- /maxcpucount:8
+    ```
+
+    一样获取`PyBoostTest.pyd`
+
+### 2.2 Code
 
     - 具体测试源码见[PyBoostTest](./code/PyBoostTest)
     - `.pyd`文件[PyBoostTest.pyd](./code/PyBoostTest/PyBoostTest.pyd)
@@ -136,7 +191,7 @@ xcopy %boost_dir%\boost\* .\local\include\boost\ /s /y /q
 
     Boost.Python语法可以参考[boost.python笔记](https://www.jianshu.com/p/0fee49c58caa)。
 
-- Run
+### 2.3 Run
 
     - in python test code [PyBoostTest](./code/PyBoostTest/PyBoostTest.py)
 
