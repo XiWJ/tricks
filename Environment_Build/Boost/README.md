@@ -12,43 +12,43 @@
 
 - build
 
-```bash
-cd \path\to\boost_1_79_0
-call bootstrap.bat
-```
+    ```bash
+    cd \path\to\boost_1_79_0
+    call bootstrap.bat
+    ```
 
-出现`b2.exe`, 接着安装
+    出现`b2.exe`, 接着安装
 
-```bash
-rem Visual Studio 2012 -> set msvcver=msvc-11.0
-rem Visual Studio 2013 -> set msvcver=msvc-12.0
-rem Visual Studio 2015 -> set msvcver=msvc-14.0
-rem Visual Studio 2017 -> set msvcver=msvc-14.1
-set msvcver=msvc-14.1
+    ```bash
+    rem Visual Studio 2012 -> set msvcver=msvc-11.0
+    rem Visual Studio 2013 -> set msvcver=msvc-12.0
+    rem Visual Studio 2015 -> set msvcver=msvc-14.0
+    rem Visual Studio 2017 -> set msvcver=msvc-14.1
+    set msvcver=msvc-14.1
 
-rem conda python=3.7 env
-conda create -n pyboost python=3.7
-conda activate pyboost
+    rem conda python=3.7 env
+    conda create -n pyboost python=3.7
+    conda activate pyboost
 
-b2 stage --stagedir=stage/x64 --with-python toolset=%msvcver% address-model=64 link=static threading=multi runtime-link=shared --build-type=complete -j8
-```
+    b2 stage --stagedir=stage/x64 --with-python toolset=%msvcver% address-model=64 link=static threading=multi runtime-link=shared --build-type=complete -j8
+    ```
 
-`b2`参数比较多，可参考[boost b2/bjam 参数说明](https://blog.csdn.net/zhangzq86/article/details/90030094)
+    `b2`参数比较多，可参考[boost b2/bjam 参数说明](https://blog.csdn.net/zhangzq86/article/details/90030094)
 
-如果不报错，生成py-boost的静态库。如果想生成全部的Boost库，将`--with-python`去掉即可。
+    如果不报错，生成py-boost的静态库。如果想生成全部的Boost库，将`--with-python`去掉即可。
 
-![](./pics/cl1.png)
+    ![](./pics/cl1.png)
 
-[可选]把生成的lib拷贝到`C:/local/`
-```bash
-set boost_dir=%cd%
-cd C:/
-mkdir local
+    [可选]把生成的lib拷贝到`C:/local/`
+    ```bash
+    set boost_dir=%cd%
+    cd C:/
+    mkdir local
 
-xcopy %boost_dir%\stage\x64\lib\*.lib .\local\lib /s /y /q
-xcopy %boost_dir%\stage\x64\lib\*.dll .\local\bin /s /y /q
-xcopy %boost_dir%\boost\* .\local\include\boost\ /s /y /q
-```
+    xcopy %boost_dir%\stage\x64\lib\*.lib .\local\lib /s /y /q
+    xcopy %boost_dir%\stage\x64\lib\*.dll .\local\bin /s /y /q
+    xcopy %boost_dir%\boost\* .\local\include\boost\ /s /y /q
+    ```
 
 ## 2. Using PyBoost
 ### 2.1.a Visual Studio Setup
@@ -140,9 +140,9 @@ xcopy %boost_dir%\boost\* .\local\include\boost\ /s /y /q
 
 ### 2.2 Code
 
-    - 具体测试源码见[PyBoostTest](./code/PyBoostTest)
-    - `.pyd`文件[PyBoostTest.pyd](./code/PyBoostTest/PyBoostTest.pyd)
-    - Wrapper
+- 具体测试源码见[PyBoostTest](./code/PyBoostTest)
+- `.pyd`文件[PyBoostTest.pyd](./code/PyBoostTest/PyBoostTest.pyd)
+- Wrapper
     ```C++
     #define BOOST_PYTHON_STATIC_LIB
     #include <boost/python.hpp>
