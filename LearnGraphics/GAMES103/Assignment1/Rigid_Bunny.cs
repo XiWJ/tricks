@@ -5,19 +5,19 @@ using System;
 public class Rigid_Bunny : MonoBehaviour 
 {
 	bool launched 		= false;
-	float dt 			= 0.015f; // 步长
-	Vector3 v 			= new Vector3(0, 0, 0);	// velocity 线速度
-	Vector3 w 			= new Vector3(0, 0, 0);	// angular velocity 角速度
+	float dt 			= 0.015f;
+	Vector3 v 			= new Vector3(0, 0, 0);	// velocity
+	Vector3 w 			= new Vector3(0, 0, 0);	// angular velocity
 	
-	float mass;									// mass 质量
-	Matrix4x4 I_ref;							// reference inertia 惯性张量
+	float mass;									// mass
+	Matrix4x4 I_ref;							// reference inertia
 
 	float linear_decay	= 0.999f;				// for velocity decay
 	float angular_decay	= 0.98f;				
-	float restitution 	= 0.5f;					// for collision 弹性系数
-	float friction = 0.2f;						// 摩擦系数
+	float restitution 	= 0.5f;					// for collision
+	float friction = 0.2f;
 
-	Vector3 gravity = new Vector3(0.0f, -9.8f, 0.0f); // 重力加速度
+	Vector3 gravity = new Vector3(0.0f, -9.8f, 0.0f);
 
 
 	// Use this for initialization
@@ -26,7 +26,7 @@ public class Rigid_Bunny : MonoBehaviour
 		Mesh mesh = GetComponent<MeshFilter>().mesh;
 		Vector3[] vertices = mesh.vertices;
 
-		float m=1; // 每个质点质量为1
+		float m=1;
 		mass=0;
 		for (int i=0; i<vertices.Length; i++) 
 		{
@@ -65,17 +65,12 @@ public class Rigid_Bunny : MonoBehaviour
 		return A;
 	}
 
-	Quaternion Add(Quaternion q1, Quaternion q2)
+	Quaternion QuaAdd(Quaternion q1, Quaternion q2)
 	{
 		return new Quaternion(q1.x + q2.x, q1.y + q2.y, q1.z + q2.z, q1.w + q2.w);
 	}
 
-	Quaternion Sub(Quaternion q1, Quaternion q2)
-	{
-		return new Quaternion(q1.x - q2.x, q1.y - q2.y, q1.z - q2.z, q1.w - q2.w);
-	}
-
-	Matrix4x4 MatrixMultiplyFloat(Matrix4x4 mat, float coeff)
+	Matrix4x4 Mat4x4MulFloat(Matrix4x4 mat, float coeff)
 	{
 		for (int i=0; i<4; i++)
 		{
@@ -87,7 +82,7 @@ public class Rigid_Bunny : MonoBehaviour
 		return mat;
 	}
 
-	Matrix4x4 MatrixSub(Matrix4x4 mat1, Matrix4x4 mat2)
+	Matrix4x4 Mat4x4Sub(Matrix4x4 mat1, Matrix4x4 mat2)
 	{
 		for (int i=0; i<4; i++)
 		{
@@ -103,75 +98,66 @@ public class Rigid_Bunny : MonoBehaviour
 	//a plane <P, N>
 	void Collision_Impulse(Vector3 P, Vector3 N)
 	{
-		/*
-			碰撞检测处理
-			P -- 平面上一点
-			N -- 平面法向量
-			目标：更新 v & w
-		*/
-
-		// 1. 获取每个顶点局部坐标
 		Mesh mesh = GetComponent<MeshFilter>().mesh;
 		Vector3[] vertices = mesh.vertices;
 
-		// 2. 获取每个顶点的全局坐标系下的旋转R和平移T
+		// 获取全局旋转与平移
 		Matrix4x4 R = Matrix4x4.Rotate(transform.rotation);
 		Vector3 T = transform.position;
 
-		// 3. 计算平均碰撞点
-		Vector3 sum = new Vector3(0, 0, 0); // 平均碰撞点
-		int collisionNum = 0; // 碰撞点数目
+		// 找平均碰撞点
+		Vector3 aveCollison = new Vector3(0.0f, 0.0f, 0.0f);
+		int collisionCount = 0;
 
 		for (int i = 0; i < vertices.Length; i ++)
 		{
-			// 3.1 计算每个顶点到平面的距离
-			Vector3 r_i = vertices[i]; // 每个顶点到原点的力矩
-			Vector3 Rri = R.MultiplyVector(r_i);
-			Vector3 x_i = T + Rri; // 顶点世界坐标
-			float d = Vector3.Dot(x_i - P, N); // 到平面距离
+			Vector3 ri = vertices[i];
+			Vector3 Rri = R.MultiplyVector(ri);
+			Vector3 xi = Rri + T; // 全局坐标
 
-			if (d < 0.0f) // 发生碰撞
+			float dist = Vector3.Dot((xi - P), N); // 距离平面
+
+			if (dist < 0.0f)
 			{
-				// 3.2 判断物体是否还在向墙内运动
-				Vector3 v_i = v + Vector3.Cross(w, Rri); // 碰撞点速度
-				float vi_dot_N = Vector3.Dot(v_i, N); // 沿着碰撞平面法向方向速度
-				
-				if (vi_dot_N < 0.0f) // 小于零表示还有沿着法向向墙内速度
+				Vector3 vi = v + Vector3.Cross(w, Rri);
+				if (Vector3.Dot(vi, N) < 0.0f) // 如果沿着平面法向反向有分量 -- 往墙内有速度
 				{
-					sum += r_i;
-					collisionNum ++;
+					collisionCount ++;
+					aveCollison += ri;
 				}
 			}
 		}
 
-		if (collisionNum == 0)
-			return;
-		
-		// 3.3 更新平均碰撞点， 碰撞速度
-		Vector3 r_collision = sum / collisionNum; // 平均碰撞点(局部坐标)
-		Vector3 Rr_collision = R.MultiplyVector(r_collision);
-		Vector3 v_collision = v + Vector3.Cross(w, Rr_collision); // 平均碰撞点的速度(世界坐标)
+		if (collisionCount == 0) // 无碰撞，直接返回
+			return ;
 
-		// 4. 计算碰撞后的新速度
-		Vector3 v_N = Vector3.Dot(v_collision, N) * N; // 法向分量
-		Vector3 v_T = v_collision - v_N; // 切向分量
-		Vector3 v_N_new = -1.0f * restitution * v_N;
-		float a = Math.Max(1.0f - friction * (1.0f + restitution) * v_N.magnitude / v_T.magnitude, 0.0f);
-		Vector3 v_T_new = a * v_T;
-		Vector3 v_new = v_N_new + v_T_new; // 新速度
+		aveCollison /= collisionCount;
+		Vector3 Rr_ave = R.MultiplyVector(aveCollison);
+		Vector3 v_ave = v + Vector3.Cross(w, Rr_ave); // 平均碰撞点线速度
 
-		// 5. 计算冲量j
-		// 5.1 计算 转动惯量
-		Matrix4x4 I_rot = R * I_ref * Matrix4x4.Transpose(R); // 转动惯量(全局)
-		Matrix4x4 I_inv = Matrix4x4.Inverse(I_rot);
-		// 5.2 计算K->j
-		Matrix4x4 Rri_star = Get_Cross_Matrix(Rr_collision);
-		Matrix4x4 K = MatrixSub(MatrixMultiplyFloat(Matrix4x4.identity, 1.0f / mass), Rri_star * I_inv * Rri_star);
-		Vector3 J = K.inverse.MultiplyVector(v_new - v_collision);
+		if (Vector3.Dot(v_ave, N) < 0.0f) // 往墙内有速度
+		{
+			Vector3 v_N = Vector3.Dot(v_ave, N) * N; // 往墙内的速度 -- 法向速度
+			Vector3 v_T = v_ave - v_N; // 切向
 
-		// 6. 更新 v 和 w
-		v = v + 1.0f / mass * J;
-		w = w + I_inv.MultiplyVector(Vector3.Cross(Rr_collision, J));
+			Vector3 v_N_new = - restitution * v_N; // 法向分量乘上弹力系数
+			float a = Math.Max(1 - friction * (1 + restitution) * v_N.magnitude / v_T.magnitude, 0.0f);
+			Vector3 v_T_new = a * v_T; // 切向分量乘上摩擦系数
+
+			Vector3 v_new = v_N_new + v_T_new; // 纠正后的碰撞后的速度
+
+			Matrix4x4 I_rot = R * I_ref * R.transpose;
+			Matrix4x4 I_inv = I_rot.inverse;
+
+			Matrix4x4 Rri_star = Get_Cross_Matrix(Rr_ave);
+			Matrix4x4 K = Mat4x4Sub(Mat4x4MulFloat(Matrix4x4.identity, 1.0f / mass), Rri_star * I_inv * Rri_star);
+
+			Vector3 J = K.inverse.MultiplyVector(v_new - v_ave); // 冲量
+
+			// 更新 线速度 v + 角速度 w
+			v = v + J / mass;
+			w = w + I_inv.MultiplyVector(Vector3.Cross(Rr_ave, J));
+		}
 	}
 
 	// Update is called once per frame
@@ -182,7 +168,6 @@ public class Rigid_Bunny : MonoBehaviour
 		{
 			transform.position = new Vector3 (0, 0.6f, 0);
 			restitution = 0.5f;
-			friction = 0.2f;
 			launched=false;
 		}
 		if(Input.GetKey("l"))
@@ -194,13 +179,13 @@ public class Rigid_Bunny : MonoBehaviour
 		if (launched)
 		{
 			// Part I: Update velocities
-			v = v + dt * gravity; // 速度更新，v = v0 + gt
-			v = v * linear_decay; // 速度衰减
-			w = w * angular_decay; // 角速度衰减
+			v += dt * gravity;
+			v *= linear_decay;
+			w *= angular_decay;
 
 			// Part II: Collision Impulse
-			Collision_Impulse(new Vector3(0, 0.01f, 0), new Vector3(0, 1, 0)); // 与地面碰撞
-			Collision_Impulse(new Vector3(2, 0, 0), new Vector3(-1, 0, 0)); // 与墙面碰撞
+			Collision_Impulse(new Vector3(0, 0.01f, 0), new Vector3(0, 1, 0));
+			Collision_Impulse(new Vector3(2, 0, 0), new Vector3(-1, 0, 0));
 
 			// Part III: Update position & orientation
 			//Update linear status
@@ -208,11 +193,11 @@ public class Rigid_Bunny : MonoBehaviour
 			//Update angular status
 			Quaternion q = transform.rotation;
 
-			x = x + dt * v;
+			x += v * dt; // 位置更新
 			Vector3 w_ = 0.5f * dt * w;
 			Quaternion dw = new Quaternion(w_.x, w_.y, w_.z, 0.0f);
-			q = Add(q, dw * q);
-		
+			q = QuaAdd(q, dw * q); // 方向更新
+
 			// Part IV: Assign to the object
 			transform.position = x;
 			transform.rotation = q;
