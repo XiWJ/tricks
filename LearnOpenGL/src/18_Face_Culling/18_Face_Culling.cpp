@@ -81,8 +81,13 @@ int main()
     glDepthFunc(GL_LESS); // GL_ALWAYS - 永远通过深度测试, GL_LESS - 片段深度值小于缓冲的深度值时通过测试
 
     // 开启面剔除
+    /*
+    正面 -- 顶点逆时针排布
+    背面 -- 顶点顺时针排布
+    */
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK); // GL_BACK -- 只剔除背向面, GL_FRONT -- 只剔除正向面, GL_FRONT_AND_BACK -- 剔除正向面和背向面
+    glFrontFace(GL_CCW); // GL_CCW -- 逆时针, GL_CW -- 顺时针
 
     // 构建 & 编译 shader
     std::string cube_vert_path = fs::current_path().string() + "\\..\\..\\..\\..\\src\\18_Face_Culling\\Shaders\\vert.glsl";
