@@ -35,6 +35,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/13_Multiple_lights)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/15_Depth_testing)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/16_discard)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/17_Blending)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/18_Face_Culling)
 
 # exe
 # add_executable(Test ${DIR_SRCS})
