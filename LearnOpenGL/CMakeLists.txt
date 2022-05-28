@@ -36,6 +36,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/15_Depth_testing)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/16_discard)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/17_Blending)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/18_Face_Culling)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/19_FrameBuffer)
 
 # exe
 # add_executable(Test ${DIR_SRCS})
