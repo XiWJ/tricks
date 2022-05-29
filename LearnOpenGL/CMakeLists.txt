@@ -20,6 +20,7 @@ message("*** LIB_FILES: ${LIB_FILES}")
 aux_source_directory(${PROJECT_SOURCE_DIR}/src DIR_SRCS)
 
 # sub dir
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/00_Mini_Render)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/01_Hello_Window)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/02_Hello_Triangle)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/03_Shaders)
