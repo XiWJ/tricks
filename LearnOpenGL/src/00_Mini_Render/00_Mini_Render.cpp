@@ -85,13 +85,13 @@ int main()
     bool loadOut = loader.LoadFile(spot_model_path);
     
     std::vector<float> vertices = {};
+    std::vector<unsigned int> indices = {};
     int triangle_num = 0;
     if (loadOut)
     {
         for (int i = 0; i < loader.LoadedMeshes.size(); i ++)
         {
             objl::Mesh curMesh = loader.LoadedMeshes[i];
-            triangle_num = curMesh.Vertices.size();
             for (int j = 0; j < curMesh.Vertices.size(); j ++)
             {
                 vertices.emplace_back(curMesh.Vertices[j].Position.X);
@@ -105,24 +105,34 @@ int main()
                 vertices.emplace_back(curMesh.Vertices[j].TextureCoordinate.X);
                 vertices.emplace_back(curMesh.Vertices[j].TextureCoordinate.Y);
             }
+            triangle_num = curMesh.Vertices.size();
+            for (int j = 0; j < curMesh.Indices.size(); j += 3)
+            {
+                indices.emplace_back(curMesh.Indices[j]);
+                indices.emplace_back(curMesh.Indices[j + 1]);
+                indices.emplace_back(curMesh.Indices[j + 2]);
+            }
         }
     }
     
     
     // cube VBO, VAO
-    unsigned int spotVBO, spotVAO;
+    unsigned int spotVBO, spotVAO, spotEBO;
     glGenVertexArrays(1, &spotVAO);
     glGenBuffers(1, &spotVBO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, spotVBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+    glGenBuffers(1, &spotEBO);
 
     glBindVertexArray(spotVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, spotVBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, spotEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0); // Position
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))); // UV
     glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
 
 
     // 生成纹理
@@ -159,7 +169,8 @@ int main()
         // --- texture ---
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, spotMap);
-        glDrawArrays(GL_TRIANGLES, 0, triangle_num);
+        // glDrawArrays(GL_TRIANGLES, 0, triangle_num);
+        glDrawElements(GL_TRIANGLES, 3 * triangle_num, GL_UNSIGNED_INT, 0);
 
 
         glfwSwapBuffers(window);
