@@ -36,6 +36,8 @@ bool firstMouse = true;
 
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+float rotateFrame = 0.0f;
+unsigned int label = 0;
 
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
@@ -175,6 +177,10 @@ int main()
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
+        if (label == 0)
+            rotateFrame = 0;
+        else if (label == 1)
+            rotateFrame += deltaTime;
 
         processInput(window);
 
@@ -186,12 +192,15 @@ int main()
         cubeShader.use();
         // --- model - view - projection
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::rotate(model, glm::radians(180.0f + 30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::rotate(model, glm::radians(180.0f + 15.0f * rotateFrame), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
         cubeShader.setMat4("model", model);
         cubeShader.setMat4("projection", projection);
         cubeShader.setMat4("view", view);
+        float width;
+        cubeShader.setFloat("width", (float)SCR_WIDTH);
+        cubeShader.setFloat("height", (float)SCR_HEIGHT);
 
 
         glBindVertexArray(spotVAO);
@@ -227,11 +236,29 @@ int main()
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
         screenShader.use();
         glBindVertexArray(quadVAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texs[kt % k]); // 使用color附件纹理
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        if (kt < 4)
+        {
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texs[kt % k]); // 使用color附件纹理
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+        else
+        {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_BLEND);
+            glDepthFunc(GL_ALWAYS);
+            screenShader.setInt("screenTexture", 0);
+            for (int pass = k - 1; pass >= 0; pass --)
+            {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, texs[pass]); // 使用color附件纹理
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+            }
+            glDepthFunc(GL_LESS);
+        }
 
 
         glfwSwapBuffers(window);
@@ -320,6 +347,14 @@ void processInput(GLFWwindow *window)
         kt = 2;
     if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
         kt = 3;
+    if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
+        kt = 4;
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+        label = 0;
+    if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS)
+        label = 1;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        label = 2;
 }
 
 
