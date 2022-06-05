@@ -211,11 +211,14 @@ public class implicit_model : MonoBehaviour
 			implicit method
 			核心要义：用下一刻的力来更新当前时刻的位置X和速度V
 			作用部分：一阶导中的f(x)外力计算部分
+			GAMES103 Lec5 page18
 		*/
 
 		// 初始化设置
 		for (int i = 0; i < X.Length; i ++)
 		{
+			if (i == 0 || i == 20) // 布头两角固定住
+				continue;
 			last_X[i] = X[i];
 			V[i] *= damping;
 			X_hat[i] = X[i] + t * V[i];
@@ -229,7 +232,7 @@ public class implicit_model : MonoBehaviour
 			
 			for (int i = 0; i < X.Length; i ++)
 			{
-				if (i == 0 || i == 20) // 布头两角固定住
+				if (i == 0 || i == 20)
 					continue;
 				/* 
 					简化后的二阶导，原版的Hessian太复杂
