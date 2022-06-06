@@ -24,6 +24,7 @@ void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path);
 
 void setFbo(unsigned int & fbo, unsigned int & textureColorBuffer, unsigned int & rbo);
+void load_obj(const char* path, std::vector<float> & vertices, std::vector<unsigned int> & indices);
 
 // 场景参数
 const unsigned int SCR_WIDTH = 800;
@@ -87,32 +88,15 @@ int main()
 
     // 数据输入
     std::string spot_model_path = fs::current_path().string() + "\\..\\..\\..\\..\\src\\99_Depth_Peeling\\Models\\spot_triangulated_good.obj";
-    objl::Loader loader;
-    bool loadOut = loader.LoadFile(spot_model_path);
-    
-    std::vector<float> vertices = {};
-    int triangle_num = 0;
-    if (loadOut)
-    {
-        for (int i = 0; i < loader.LoadedMeshes.size(); i ++)
-        {
-            objl::Mesh curMesh = loader.LoadedMeshes[i];
-            triangle_num = curMesh.Vertices.size();
-            for (int j = 0; j < curMesh.Vertices.size(); j ++)
-            {
-                vertices.emplace_back(curMesh.Vertices[j].Position.X);
-                vertices.emplace_back(curMesh.Vertices[j].Position.Y);
-                vertices.emplace_back(curMesh.Vertices[j].Position.Z);
+    std::vector<float> spot_vertices;
+    std::vector<unsigned int> spot_indices;
+    load_obj(spot_model_path.c_str(), spot_vertices, spot_indices);
 
-                // vertices.emplace_back(curMesh.Vertices[j].Normal.X);
-                // vertices.emplace_back(curMesh.Vertices[j].Normal.Y);
-                // vertices.emplace_back(curMesh.Vertices[j].Normal.Z);
+    std::string Crate1_model_path = "D:\\github\\tricks\\LearnGraphics\\GAMES101_Assignment\\Assignment3\\code\\models\\Crate\\Crate1.obj";
+    std::vector<float> Crate_vertices;
+    std::vector<unsigned int> Crate_indices;
+    load_obj(Crate1_model_path.c_str(), Crate_vertices, Crate_indices);
 
-                vertices.emplace_back(curMesh.Vertices[j].TextureCoordinate.X);
-                vertices.emplace_back(curMesh.Vertices[j].TextureCoordinate.Y);
-            }
-        }
-    }
 
     float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
         // positions   // texCoords
@@ -126,38 +110,63 @@ int main()
     };
     
     
-    // cube VBO, VAO
-    unsigned int spotVBO, spotVAO;
+    // spot VBO, VAO
+    unsigned int spotVBO, spotVAO, spotEBO;
     glGenVertexArrays(1, &spotVAO);
     glGenBuffers(1, &spotVBO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, spotVBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+    glGenBuffers(1, &spotEBO);
 
     glBindVertexArray(spotVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, spotVBO);
+    glBufferData(GL_ARRAY_BUFFER, spot_vertices.size() * sizeof(float), &spot_vertices[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, spotEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, spot_indices.size() * sizeof(unsigned int), &spot_indices[0], GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0); // Position
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))); // UV
     glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
+    // Crate VBO, VAO
+    unsigned int CrateVBO, CrateVAO, CrateEBO;
+    glGenVertexArrays(1, &CrateVAO);
+    glGenBuffers(1, &CrateVBO);
+    glGenBuffers(1, &CrateEBO);
+
+    glBindVertexArray(CrateVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, CrateVBO);
+    glBufferData(GL_ARRAY_BUFFER, Crate_vertices.size() * sizeof(float), &Crate_vertices[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, CrateEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, Crate_indices.size() * sizeof(unsigned int), &Crate_indices[0], GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0); // Position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))); // UV
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
 
     // screen quad VBO, VAO
     unsigned int quadVBO, quadVAO;
     glGenVertexArrays(1, &quadVAO);
     glGenBuffers(1, &quadVBO);
+
+    glBindVertexArray(quadVAO);
     glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
 
-    glBindVertexArray(quadVBO);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0); // Position
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float))); // UV
     glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
 
 
     // 生成纹理
     std::string spot_texture_path = fs::current_path().string() + "\\..\\..\\..\\..\\src\\99_Depth_Peeling\\Textures\\spot_texture.png";
     unsigned int spotMap = loadTexture(spot_texture_path.c_str());
+    std::string Crate_texture_path = "D:\\github\\tricks\\LearnGraphics\\GAMES101_Assignment\\Assignment3\\code\\models\\Crate\\crate_1.jpg";
+    unsigned int CrateMap = loadTexture(Crate_texture_path.c_str());
     
     cubeShader.use(); // 不要忘记在设置uniform变量之前激活着色器程序！
     cubeShader.setInt("material.diffuse", 0);
@@ -184,10 +193,12 @@ int main()
 
         processInput(window);
 
-        /* pass 1 */
+        /* pass A 深度剥离 k passes */
         // 绑定framebuffer，绘制场景到绑定的framebuffer color附件，作为color texture
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
+        GLint currentFBO;
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFBO);
         
         cubeShader.use();
         // --- model - view - projection
@@ -198,7 +209,6 @@ int main()
         cubeShader.setMat4("model", model);
         cubeShader.setMat4("projection", projection);
         cubeShader.setMat4("view", view);
-        float width;
         cubeShader.setFloat("width", (float)SCR_WIDTH);
         cubeShader.setFloat("height", (float)SCR_HEIGHT);
 
@@ -220,45 +230,76 @@ int main()
             glBindFramebuffer(GL_FRAMEBUFFER, fbos[pass]);
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glDrawArrays(GL_TRIANGLES, 0, triangle_num);
+            // glDrawArrays(GL_TRIANGLES, 0, vertices_num);
+            glDrawElements(GL_TRIANGLES, spot_indices.size(), GL_UNSIGNED_INT, 0);
         }
         
 
         // 清理
         glBindVertexArray(0);
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, currentFBO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
 
 
-        /* pass 2 */
+        /* pass B 混合画在quad screen上 */
         // 绑定回默认framebuffer(main windows) & 绘制with附加的color纹理
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
 
 
         screenShader.use();
         glBindVertexArray(quadVAO);
-        if (kt < 4)
+        if (kt < k)
         {
+            screenShader.setInt("screenTexture", 0);
+            screenShader.setInt("depthTexture", 1);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texs[kt % k]); // 使用color附件纹理
+            glActiveTexture(GL_TEXTURE0 + 1);
+            glBindTexture(GL_TEXTURE_2D, dtexs[kt % k]); // 使用depth附件纹理
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }
         else
         {
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             glEnable(GL_BLEND);
-            glDepthFunc(GL_ALWAYS);
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
             screenShader.setInt("screenTexture", 0);
-            for (int pass = k - 1; pass >= 0; pass --)
+            screenShader.setInt("depthTexture", 1);
+            for (int pass = k - 1; pass >= 0; pass --) // 从后往前画
             {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, texs[pass]); // 使用color附件纹理
+                glActiveTexture(GL_TEXTURE0 + 1);
+                glBindTexture(GL_TEXTURE_2D, dtexs[pass]); // 使用depth附件纹理
                 glDrawArrays(GL_TRIANGLES, 0, 6);
             }
-            glDepthFunc(GL_LESS);
         }
+
+
+        // 另外画一个箱子
+        cubeShader.use();
+        cubeShader.setInt("material.diffuse", 0);
+        cubeShader.setBool("first_pass", true);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-2.5f, 0.0f, -2.5f));
+        model = glm::rotate(model, glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        view = camera.GetViewMatrix();
+        cubeShader.setMat4("model", model);
+        cubeShader.setMat4("projection", projection);
+        cubeShader.setMat4("view", view);
+        cubeShader.setFloat("width", (float)SCR_WIDTH);
+        cubeShader.setFloat("height", (float)SCR_HEIGHT);
+
+        glBindVertexArray(CrateVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, CrateMap);
+        glDrawElements(GL_TRIANGLES, Crate_indices.size(), GL_UNSIGNED_INT, 0);
 
 
         glfwSwapBuffers(window);
@@ -268,8 +309,12 @@ int main()
 
     glDeleteVertexArrays(1, &spotVAO);
     glDeleteVertexArrays(1, &quadVAO);
+    glDeleteVertexArrays(1, &CrateVAO);
     glDeleteBuffers(1, &spotVBO);
+    glDeleteBuffers(1, &spotEBO);
     glDeleteBuffers(1, &quadVBO);
+    glDeleteBuffers(1, &CrateVBO);
+    glDeleteBuffers(1, &CrateEBO);
     for (int i = 0; i < k; i ++)
     {
         glDeleteFramebuffers(1, &fbos[i]);
@@ -428,4 +473,39 @@ unsigned int loadTexture(char const * path)
     }
 
     return textureID;
+}
+
+void load_obj(const char* path, std::vector<float> & vertices, std::vector<unsigned int> & indices)
+{
+    objl::Loader loader;
+    bool loadOut = loader.LoadFile(path);
+    
+    vertices.clear();
+    indices.clear();
+    if (loadOut)
+    {
+        for (int i = 0; i < loader.LoadedMeshes.size(); i ++)
+        {
+            objl::Mesh curMesh = loader.LoadedMeshes[i];
+            for (int j = 0; j < curMesh.Vertices.size(); j ++)
+            {
+                vertices.emplace_back(curMesh.Vertices[j].Position.X);
+                vertices.emplace_back(curMesh.Vertices[j].Position.Y);
+                vertices.emplace_back(curMesh.Vertices[j].Position.Z);
+
+                // vertices.emplace_back(curMesh.Vertices[j].Normal.X);
+                // vertices.emplace_back(curMesh.Vertices[j].Normal.Y);
+                // vertices.emplace_back(curMesh.Vertices[j].Normal.Z);
+
+                vertices.emplace_back(curMesh.Vertices[j].TextureCoordinate.X);
+                vertices.emplace_back(curMesh.Vertices[j].TextureCoordinate.Y);
+            }
+            for (int j = 0; j < curMesh.Indices.size(); j += 3)
+            {
+                indices.emplace_back(curMesh.Indices[j]);
+                indices.emplace_back(curMesh.Indices[j + 1]);
+                indices.emplace_back(curMesh.Indices[j + 2]);
+            }
+        }
+    }
 }
