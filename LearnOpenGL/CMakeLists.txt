@@ -39,6 +39,7 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/17_Blending)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/18_Face_Culling)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/19_FrameBuffer)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/99_Depth_Peeling)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/20_Cubemaps)
 
 # exe
 # add_executable(Test ${DIR_SRCS})
