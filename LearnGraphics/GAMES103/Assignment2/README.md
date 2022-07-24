@@ -50,12 +50,19 @@
     
     ![](pics/PBD.PNG)
 
+- Properties
+    1. 没有物理含义，从头到尾没有出现stiffness.
+
+    2. 受迭代数目影响，迭代次数少表现的很弹，迭代次数多表现stiffness大。
+
+    3. 受mesh分辨率影响，分辨率大需要迭代次数越多。
+
 ## 3 Strain Limiting
 - Why  
     
     PBD没有物理含义，整体表现收到迭代次数和顶点个数限制，迭代次数太多导致Locking.
 			       
-    作为PBD补充，保证PBD的模拟稳定。
+    作为PBD补充，保证PBD的模拟**稳定**。应对大形变具有很好的性质。
 
 - What 
     1. PBD的步骤1采用隐式积分等方法更新位置
